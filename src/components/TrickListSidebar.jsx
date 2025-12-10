@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { formatTrickList } from "./TrickPass.jsx";
+import { calculatePassTotal, formatTrickList } from "../utils/trickUtils.js";
 
 // Compact trick list sidebar for calculator view
 export default function TrickListSidebar({ pass1, pass2, currentPass }) {
   const [copied, setCopied] = useState(false);
-  const pass1Total = pass1.reduce((sum, trick) => sum + trick.points, 0);
-  const pass2Total = pass2.reduce((sum, trick) => sum + trick.points, 0);
+  const pass1Total = calculatePassTotal(pass1);
+  const pass2Total = calculatePassTotal(pass2);
 
   const handleCopy = async () => {
     const text = formatTrickList(pass1, pass2);

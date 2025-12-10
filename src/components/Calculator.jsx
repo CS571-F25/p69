@@ -3,6 +3,7 @@ import ToggleButton from "./ToggleButton.jsx";
 import StatsCard from "./StatsCard.jsx";
 import TrickListSidebar from "./TrickListSidebar.jsx";
 import { getTricks } from "../data/tricks.js";
+import { calculatePassTotal } from "../utils/trickUtils.js";
 
 export default function Calculator({
   addTrick,
@@ -155,8 +156,8 @@ export default function Calculator({
     secondLastReversibleTrick.startPos === orientation
   );
 
-  const passTotal = trickList.reduce((sum, trick) => sum + trick.points, 0);
-  const allTotal = allTricks.reduce((sum, trick) => sum + trick.points, 0);
+  const passTotal = calculatePassTotal(trickList);
+  const allTotal = calculatePassTotal(allTricks);
 
   // Count flips for 6-flip limit warning
   const flipCount = trickList.filter(t => t.abbr.includes("FL")).length;
