@@ -5,22 +5,87 @@ import Calculator from "./components/Calculator.jsx";
 import TrickPass from "./components/TrickPass.jsx";
 import TrickGuide from "./components/TrickGuide.jsx";
 
+// Initial calculator state
+const getInitialCalcState = () => ({
+  orientation: "front",
+  skiCount: 1,
+  lastReversibleTrick: null,
+  secondLastReversibleTrick: null,
+  modifier: "spins",
+  isWake: false,
+  isToe: false,
+  noCredit: false,
+  passStarted: false,
+});
+
 export default function App() {
-  const [trickList, setTrickList] = useState([]);
+  // Track tricks for current pass being edited
+  const [currentPassTricks, setCurrentPassTricks] = useState([]);
+  // Track which pass we're on (1 or 2)
+  const [currentPass, setCurrentPass] = useState(1);
+  // Store completed passes (array of arrays)
+  const [completedPasses, setCompletedPasses] = useState([]);
+  // Calculator state (persists across tab switches)
+  const [calcState, setCalcState] = useState(getInitialCalcState());
+  // Calculator state history for undo
+  const [calcStateHistory, setCalcStateHistory] = useState([]);
 
   const addTrick = (trick) => {
-    setTrickList([...trickList, trick]);
+    setCurrentPassTricks([...currentPassTricks, trick]);
   };
 
-  const clearTricks = () => {
-    setTrickList([]);
+  const undoTrick = () => {
+    if (currentPassTricks.length > 0) {
+      setCurrentPassTricks(currentPassTricks.slice(0, -1));
+      return true;
+    }
+    return false;
+  };
+
+  const startSecondPass = () => {
+    if (currentPass === 1 && currentPassTricks.length > 0) {
+      // Save first pass and start second
+      setCompletedPasses([currentPassTricks]);
+      setCurrentPassTricks([]);
+      setCurrentPass(2);
+      setCalcState(getInitialCalcState());
+      setCalcStateHistory([]);
+    }
+  };
+
+  const clearAll = () => {
+    setCurrentPassTricks([]);
+    setCompletedPasses([]);
+    setCurrentPass(1);
+    setCalcState(getInitialCalcState());
+    setCalcStateHistory([]);
+  };
+
+  const clearCurrentPass = () => {
+    setCurrentPassTricks([]);
+    setCalcState(getInitialCalcState());
+    setCalcStateHistory([]);
+  };
+
+  // Get all tricks from all passes for duplicate checking
+  const getAllTricks = () => {
+    return [...completedPasses.flat(), ...currentPassTricks];
+  };
+
+  // Get all tricks for display in TrickPass
+  const getAllPassesForDisplay = () => {
+    if (currentPass === 1) {
+      return { pass1: currentPassTricks, pass2: [] };
+    } else {
+      return { pass1: completedPasses[0] || [], pass2: currentPassTricks };
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-100">
       {/* Navigation */}
-      <nav className="p-6 bg-slate-950 relative">
-        <div className="flex gap-10 items-center justify-center">
+      <nav className="p-3 sm:p-6 bg-slate-950 relative">
+        <div className="flex gap-4 sm:gap-10 items-center justify-center">
           <NavLink to="/">Calculator</NavLink>
           <NavLink to="/trick-pass">Trick Pass</NavLink>
           <NavLink to="/trick-guide">Trick Guide</NavLink>
@@ -30,10 +95,30 @@ export default function App() {
       </nav>
 
       {/* Page Content */}
-      <div className="p-6">
+      <div className="p-2 sm:p-6">
         <Routes>
-          <Route path="/" element={<Calculator addTrick={addTrick} clearTricks={clearTricks} trickList={trickList} />} />
-          <Route path="/trick-pass" element={<TrickPass trickList={trickList} />} />
+          <Route path="/" element={
+            <Calculator
+              addTrick={addTrick}
+              undoTrick={undoTrick}
+              trickList={currentPassTricks}
+              allTricks={getAllTricks()}
+              currentPass={currentPass}
+              startSecondPass={startSecondPass}
+              clearAll={clearAll}
+              clearCurrentPass={clearCurrentPass}
+              calcState={calcState}
+              setCalcState={setCalcState}
+              calcStateHistory={calcStateHistory}
+              setCalcStateHistory={setCalcStateHistory}
+              passesForDisplay={getAllPassesForDisplay()}
+            />
+          } />
+          <Route path="/trick-pass" element={
+            <TrickPass
+              passes={getAllPassesForDisplay()}
+            />
+          } />
           <Route path="/trick-guide" element={<TrickGuide />} />
         </Routes>
       </div>
