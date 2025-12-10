@@ -1,8 +1,10 @@
+import { useState } from "react";
 import TrickButton from "./TrickButton.jsx";
 import ToggleButton from "./ToggleButton.jsx";
 import StatsCard from "./StatsCard.jsx";
 import TrickListSidebar from "./TrickListSidebar.jsx";
-import { getTricks } from "../data/tricks.js";
+import TrickRecommendations from "./TrickRecommendations.jsx";
+import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 
 export default function Calculator({
@@ -22,6 +24,9 @@ export default function Calculator({
 }) {
   const { orientation, skiCount, lastReversibleTrick, secondLastReversibleTrick, modifier, isWake, isToe, noCredit, passStarted } = calcState;
 
+  // Heatmap state - only updated when predictions change
+  const [heatmapData, setHeatmapData] = useState({ map: new Map(), total: 0 });
+
   const updateState = (updates) => setCalcState(prev => ({ ...prev, ...updates }));
 
   // Save current state to history before making changes
@@ -29,7 +34,13 @@ export default function Calculator({
     setCalcStateHistory(prev => [...prev, calcState]);
   };
 
+  // Callback for heatmap updates from predictions
+  const handleHeatmapUpdate = (newHeatmap, total) => {
+    setHeatmapData({ map: newHeatmap, total });
+  };
+
   const tricks = getTricks(skiCount, modifier, isWake, isToe);
+  const allTricksForSki = getAllTricksForSkiCount(skiCount);
 
   const handleTrickClick = (trick) => {
     const { abbr, points, endPos } = trick;
@@ -175,6 +186,7 @@ export default function Calculator({
 
   return (
     <div className="max-w-6xl mx-auto px-3 py-4 sm:p-6">
+      <h1 className="sr-only">Trick Calculator</h1>
       <div className="flex gap-6">
         {/* Main Calculator Section */}
         <div className="flex-1 min-w-0">
@@ -253,6 +265,7 @@ export default function Calculator({
                     active={true}
                     variant="green"
                     onClick={startSecondPass}
+                    ariaLabel="Start second pass"
                   >
                     Start Pass 2
                   </ToggleButton>
@@ -282,6 +295,7 @@ export default function Calculator({
               {tricks.map((trick) => {
                 const isAvailable = trick.startPos === orientation;
                 const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
+                const heatRank = heatmapData.map.get(trick.abbr);
                 return (
                   <TrickButton
                     key={trick.abbr}
@@ -290,6 +304,8 @@ export default function Calculator({
                     onClick={() => handleTrickClick(trick)}
                     disabled={!isAvailable}
                     alreadyPerformed={alreadyPerformed}
+                    heatRank={heatRank}
+                    heatTotal={heatmapData.total}
                   />
                 );
               })}
@@ -329,7 +345,8 @@ export default function Calculator({
             {canReverseSecondLastTrick && (
               <button
                 onClick={() => handleReverse(secondLastReversibleTrick)}
-                className="flex-1 min-w-[60px] bg-green-900 hover:bg-green-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border border-green-800 hover:border-green-600"
+                aria-label={`Reverse ${secondLastReversibleTrick.abbr}, ${secondLastReversibleTrick.points} points`}
+                className="flex-1 min-w-[60px] bg-green-900 hover:bg-green-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border border-green-800 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
               >
                 <div className="text-sm sm:text-base">R{secondLastReversibleTrick.abbr}</div>
                 <div className="text-xs sm:text-sm text-green-300">{secondLastReversibleTrick.points} pts</div>
@@ -340,7 +357,8 @@ export default function Calculator({
             {canReverseLastTrick && (
               <button
                 onClick={() => handleReverse(lastReversibleTrick)}
-                className="flex-1 min-w-[60px] bg-green-900 hover:bg-green-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border border-green-800 hover:border-green-600"
+                aria-label={`Reverse ${lastReversibleTrick.abbr}, ${lastReversibleTrick.points} points`}
+                className="flex-1 min-w-[60px] bg-green-900 hover:bg-green-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border border-green-800 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
               >
                 <div className="text-sm sm:text-base">R{lastReversibleTrick.abbr}</div>
                 <div className="text-xs sm:text-sm text-green-300">{lastReversibleTrick.points} pts</div>
@@ -351,7 +369,8 @@ export default function Calculator({
             {!canReverseSecondLastTrick && !canReverseLastTrick && (
               <button
                 disabled
-                className="flex-1 min-w-[60px] bg-slate-900 text-gray-600 border-slate-800 cursor-not-allowed opacity-50 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border"
+                aria-label="Reverse trick, unavailable"
+                className="flex-1 min-w-[60px] bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border"
               >
                 REV
               </button>
@@ -361,9 +380,10 @@ export default function Calculator({
             <button
               onClick={handleUndo}
               disabled={calcStateHistory.length === 0}
-              className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border ${
+              aria-label="Undo last trick"
+              className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
                 calcStateHistory.length === 0
-                  ? "bg-slate-900 text-gray-600 border-slate-800 cursor-not-allowed opacity-50"
+                  ? "bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50"
                   : "bg-amber-900 hover:bg-amber-700 text-gray-100 border-amber-800 hover:border-amber-600"
               }`}
             >
@@ -375,14 +395,16 @@ export default function Calculator({
               <>
                 <button
                   onClick={clearCurrentPass}
-                  className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600"
+                  aria-label="Clear current pass"
+                  className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
                 >
                   <span className="hidden sm:inline">Clear Pass</span>
                   <span className="sm:hidden">Clear<br/>Pass</span>
                 </button>
                 <button
                   onClick={clearAll}
-                  className="flex-1 min-w-[60px] bg-red-950 hover:bg-red-900 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-900 hover:border-red-700"
+                  aria-label="Clear all passes"
+                  className="flex-1 min-w-[60px] bg-red-950 hover:bg-red-900 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-900 hover:border-red-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
                 >
                   <span className="hidden sm:inline">Clear All</span>
                   <span className="sm:hidden">Clear<br/>All</span>
@@ -391,7 +413,8 @@ export default function Calculator({
             ) : (
               <button
                 onClick={clearAll}
-                className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600"
+                aria-label="Clear all tricks"
+                className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
               >
                 Clear
               </button>
@@ -404,6 +427,23 @@ export default function Calculator({
               Exceeded 6 flip limit ({flipCount} flips)
             </div>
           )}
+
+          {/* AI Recommendations - mobile only */}
+          <div className="lg:hidden mt-4 bg-slate-800 rounded-lg p-3 border border-slate-700">
+            <TrickRecommendations
+              trickHistory={allTricks}
+              currentOrientation={orientation}
+              allPerformedTricks={allTricks}
+              availableTricks={allTricksForSki}
+              onTrickClick={(abbr) => {
+                const trick = allTricksForSki.find((t) => t.abbr === abbr);
+                if (trick && trick.startPos === orientation) {
+                  handleTrickClick(trick);
+                }
+              }}
+              onHeatmapUpdate={handleHeatmapUpdate}
+            />
+          </div>
         </div>
 
         {/* Trick List Sidebar - hidden on small screens */}
@@ -412,6 +452,21 @@ export default function Calculator({
             pass1={passesForDisplay.pass1}
             pass2={passesForDisplay.pass2}
             currentPass={currentPass}
+            recommendations={
+              <TrickRecommendations
+                trickHistory={allTricks}
+                currentOrientation={orientation}
+                allPerformedTricks={allTricks}
+                availableTricks={allTricksForSki}
+                onTrickClick={(abbr) => {
+                  const trick = allTricksForSki.find((t) => t.abbr === abbr);
+                  if (trick && trick.startPos === orientation) {
+                    handleTrickClick(trick);
+                  }
+                }}
+                onHeatmapUpdate={handleHeatmapUpdate}
+              />
+            }
           />
         </div>
       </div>

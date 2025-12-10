@@ -26,6 +26,7 @@ export default function About() {
             <li>Support for all modifiers including wake, toe, and stepover variations</li>
             <li>Two-pass system with duplicate detection</li>
             <li>Shareable text formatting for your trick runs</li>
+            <li>Smart predictions for the most likely next trick</li>
             <li>Quick reference guide to all trick values</li>
           </ul>
         </Section>

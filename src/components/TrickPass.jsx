@@ -24,12 +24,15 @@ export default function TrickPass({ passes }) {
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Trick Pass</h1>
         {hasTricks && (
-          <button
-            onClick={handleCopy}
-            className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs sm:text-sm px-3 py-1.5 rounded-lg border border-slate-600 transition-colors"
-          >
-            {copied ? "Copied!" : "Copy List"}
-          </button>
+          <div aria-live="polite">
+            <button
+              onClick={handleCopy}
+              aria-label={copied ? "Copied to clipboard" : "Copy trick list to clipboard"}
+              className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs sm:text-sm px-3 py-1.5 rounded-lg border border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
+            >
+              {copied ? "Copied!" : "Copy List"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -40,7 +43,7 @@ export default function TrickPass({ passes }) {
       </div>
 
       {!hasTricks ? (
-        <p className="text-gray-500 italic text-sm">No tricks yet. Start adding tricks in the Calculator!</p>
+        <p className="text-gray-400 italic text-sm">No tricks yet. Start adding tricks in the Calculator!</p>
       ) : (
         <>
           {/* Pass 1 - no title if only one pass */}

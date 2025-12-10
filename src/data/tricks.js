@@ -178,6 +178,48 @@ export const toeWakeSpinTricks = [
   { abbr: "TW7B", points: 650, description: "Toe Wake B-B", startPos: "back", endPos: "back", changesOrientation: false, canReverse: false },
 ];
 
+// Generate reverse versions of tricks (for AI predictions heatmap)
+function generateReverseTricks(tricks) {
+  return tricks
+    .filter(t => t.canReverse !== false)
+    .map(t => ({
+      abbr: "R" + t.abbr,
+      points: t.points,
+      description: "Reverse " + t.description,
+      startPos: t.startPos,
+      endPos: t.endPos,
+      changesOrientation: t.changesOrientation,
+    }));
+}
+
+// Helper to get ALL tricks for a given ski count (for AI predictions)
+export function getAllTricksForSkiCount(skiCount) {
+  if (skiCount === 2) {
+    const baseTricks = [
+      ...twoSkiSpinTricks,
+      ...twoSkiStepTricks,
+      ...twoSkiWakeSpinTricks,
+      ...twoSkiWakeStepTricks,
+      ...twoSkiFlipTricks,
+    ];
+    const reverseTricks = generateReverseTricks(baseTricks);
+    return [...baseTricks, ...reverseTricks];
+  }
+  const baseTricks = [
+    ...oneSkiSpinTricks,
+    ...oneSkiStepTricks,
+    ...oneSkiLineTricks,
+    ...oneSkiFlipTricks,
+    ...oneSkiWakeSpinTricks,
+    ...oneSkiWakeStepTricks,
+    ...toeSpinTricks,
+    ...toeStepTricks,
+    ...toeWakeSpinTricks,
+  ];
+  const reverseTricks = generateReverseTricks(baseTricks);
+  return [...baseTricks, ...reverseTricks];
+}
+
 // Helper to get tricks by ski count, modifier, wake, and toe state
 export function getTricks(skiCount, modifier, isWake, isToe) {
   if (skiCount === 2) {

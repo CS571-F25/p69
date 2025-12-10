@@ -85,7 +85,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-gray-100">
       {/* Navigation */}
-      <nav className="p-3 sm:p-6 bg-slate-950 relative">
+      <nav className="p-3 sm:p-6 bg-slate-950 relative" aria-label="Main navigation">
         <div className="flex gap-6 sm:gap-12 items-center justify-center">
           <NavLink to="/">Calculator</NavLink>
           <NavLink to="/trick-pass">Trick Pass</NavLink>

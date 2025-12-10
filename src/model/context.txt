@@ -1,0 +1,131 @@
+I will give you:
+✅ ONNX export code (drop directly into your notebook)
+✅ A sanity check to confirm the model exported correctly
+✅ The exact ONNX input/output format
+✅ A short example of running inference in Node/React with ONNX Runtime Web
+✅ STEP 1 — Add This Export Code to Your Notebook
+Put this AFTER training and after you load or define the model.
+🔽 EXPORT TO ONNX (exact code for your GRU model)
+import torch
+import torch.onnx
+
+# Reload trained model if needed
+checkpoint = torch.load("tricks_gru.pt", map_location="cpu")
+model = TrickGRU(
+    vocab_size=len(checkpoint["vocab"]),
+    embed_dim=64,
+    hidden_dim=128,
+    num_layers=1
+)
+model.load_state_dict(checkpoint["model_state"])
+model.eval()
+
+SEQ_LEN = checkpoint["seq_len"]
+vocab = checkpoint["vocab"]
+
+# Dummy input for tracing
+dummy_input = torch.randint(
+    low=0,
+    high=len(vocab),
+    size=(1, SEQ_LEN),
+    dtype=torch.long
+)
+
+onnx_path = "tricks_gru.onnx"
+
+torch.onnx.export(
+    model,
+    dummy_input,
+    onnx_path,
+    export_params=True,
+    opset_version=17,               # Best opset for GRU compatibility
+    input_names=["input_ids"],
+    output_names=["logits"],
+    dynamic_axes={
+        "input_ids": {0: "batch_size"},
+        "logits": {0: "batch_size"},
+    }
+)
+
+print(f"Exported ONNX model to {onnx_path}")
+🧠 What the ONNX model accepts and returns
+Input
+input_ids:
+shape: (batch_size, SEQ_LEN)
+dtype: int64
+meaning: token IDs for last SEQ_LEN tricks
+Output
+logits:
+shape: (batch_size, vocab_size)
+dtype: float32
+meaning: unnormalized raw scores for each trick
+🚨 IMPORTANT
+Your React app (or backend) must still:
+apply softmax
+apply legality mask
+sort + topK
+The ONNX model outputs only the core ML logits.
+✅ STEP 2 — VERIFY THE ONNX EXPORT
+Add this block after export:
+import onnx
+onnx_model = onnx.load("tricks_gru.onnx")
+onnx.checker.check_model(onnx_model)
+print("ONNX model is valid ✔️")
+🚀 STEP 3 — Example Usage (Node / React with ONNX Runtime Web)
+Create a directory like:
+/public/model/tricks_gru.onnx
+In your React app:
+import * as ort from "onnxruntime-web";
+
+export async function predictNext(logitsInput) {
+  const session = await ort.InferenceSession.create("/model/tricks_gru.onnx");
+
+  const inputTensor = new ort.Tensor("int64", BigInt64Array.from(logitsInput), [1, SEQ_LEN]);
+
+  const results = await session.run({
+    input_ids: inputTensor
+  });
+
+  const logits = results.logits.data; // Float32Array
+
+  return Array.from(logits);
+}
+Then apply legality mask + softmax in JS exactly as your backend does now.
+🎉 YOU NOW HAVE:
+A fully exported ONNX model
+Ready for React / Node.js inference
+Defined I/O contract
+Minimal preprocessing: encode history → int64 tensor
+Postprocessing: softmax + legality mask + sort
+
+
+📌 REQUIRED SECTION TO ADD TO YOUR DOCUMENTATION
+❗ Important: What the ONNX Model Does Not Do
+The exported ONNX model:
+Does not enforce orientation rules (front/back facing).
+Does not enforce reverse-trick rules (RB after B only when allowed).
+Does not enforce toe/wake constraints.
+Does not prevent repeating illegal tricks.
+Does not apply the legality mask.
+👉 It is purely a sequence model.
+It predicts the next trick based only on statistical patterns from the training dataset.
+👉 All legality filtering MUST be applied by your TypeScript/React app after the model produces probabilities.
+For example, your app should:
+Run ONNX → produce logits.
+Softmax → get raw probabilities.
+Apply legality mask → set illegal tricks to 0.
+Renormalize.
+Show top-k legal tricks.
+This is exactly the same process used during training/evaluation in Python (with build_rule_mask()).
+📌 Why This Matters
+People reviewing your documentation need to know:
+✔ The ONNX model cannot guarantee legal sequences on its own.
+✔ Your frontend is responsible for filtering invalid tricks.
+✔ This makes the model simpler, faster, portable, and rule-agnostic.
+📌 Want me to update the full documentation to include this clearly?
+I can generate:
+A polished "Model Limitations / Responsibilities" section
+A clear "Pipeline Overview" diagram
+A developer guide explaining where legality masking happens
+OR I can rewrite the entire documentation with this integrated.
+Just say “rewrite docs with this included” or “add a section only.”
