@@ -1,5 +1,5 @@
 {
-  "vocab_size": 78,
+  "vocab_size": 87,
   "seq_len": 100,
   "model_type": "GRU",
   "embed_dim": 64,
