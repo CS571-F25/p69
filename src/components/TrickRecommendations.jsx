@@ -6,6 +6,7 @@ export default function TrickRecommendations({
   currentOrientation,
   allPerformedTricks,
   availableTricks,
+  availableReverseAbbrs = [], // Array of currently available reverse trick abbreviations
   onTrickClick,
   onHeatmapUpdate, // Callback to pass heatmap to parent (stored in ref, won't cause re-render)
 }) {
@@ -13,9 +14,10 @@ export default function TrickRecommendations({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Create a stable key from trick history (last few tricks) and orientation
+  // Create a stable key from trick history (last few tricks), orientation, and available reverses
   const lastTricks = trickHistory.slice(-3).map(t => t.abbr).join(",");
-  const trickHistoryKey = trickHistory.length + "-" + currentOrientation + "-" + lastTricks;
+  const reversesKey = availableReverseAbbrs.join(",");
+  const trickHistoryKey = trickHistory.length + "-" + currentOrientation + "-" + lastTricks + "-" + reversesKey;
 
   useEffect(() => {
     let cancelled = false;
@@ -29,12 +31,13 @@ export default function TrickRecommendations({
 
         if (cancelled) return;
 
-        // Filter by orientation and get heatmap
+        // Filter by orientation, available reverses, and get heatmap
         const { top5, heatmap, totalFiltered } = filterLegalPredictions(
           rawPredictions,
           currentOrientation,
           allPerformedTricks,
-          availableTricks
+          availableTricks,
+          availableReverseAbbrs
         );
 
         setPredictions(top5);

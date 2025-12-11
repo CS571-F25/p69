@@ -167,6 +167,15 @@ export default function Calculator({
     secondLastReversibleTrick.startPos === orientation
   );
 
+  // Build array of available reverse abbreviations for AI suggestions
+  const availableReverseAbbrs = [];
+  if (canReverseLastTrick) {
+    availableReverseAbbrs.push("R" + lastReversibleTrick.abbr);
+  }
+  if (canReverseSecondLastTrick) {
+    availableReverseAbbrs.push("R" + secondLastReversibleTrick.abbr);
+  }
+
   const passTotal = calculatePassTotal(trickList);
   const allTotal = calculatePassTotal(allTricks);
 
@@ -296,11 +305,13 @@ export default function Calculator({
                 const isAvailable = trick.startPos === orientation;
                 const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
                 const heatRank = heatmapData.map.get(trick.abbr);
+                // Show 0 points when NC is selected (alreadyPerformed handled by TrickButton)
+                const displayPoints = noCredit ? 0 : trick.points;
                 return (
                   <TrickButton
                     key={trick.abbr}
                     abbr={trick.abbr}
-                    points={trick.points}
+                    points={displayPoints}
                     onClick={() => handleTrickClick(trick)}
                     disabled={!isAvailable}
                     alreadyPerformed={alreadyPerformed}
@@ -435,6 +446,7 @@ export default function Calculator({
               currentOrientation={orientation}
               allPerformedTricks={allTricks}
               availableTricks={allTricksForSki}
+              availableReverseAbbrs={availableReverseAbbrs}
               onTrickClick={(abbr) => {
                 const trick = allTricksForSki.find((t) => t.abbr === abbr);
                 if (trick && trick.startPos === orientation) {
@@ -458,6 +470,7 @@ export default function Calculator({
                 currentOrientation={orientation}
                 allPerformedTricks={allTricks}
                 availableTricks={allTricksForSki}
+                availableReverseAbbrs={availableReverseAbbrs}
                 onTrickClick={(abbr) => {
                   const trick = allTricksForSki.find((t) => t.abbr === abbr);
                   if (trick && trick.startPos === orientation) {

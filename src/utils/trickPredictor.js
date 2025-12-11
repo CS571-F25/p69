@@ -5,27 +5,37 @@ import itos from "../model/itos.json";
 const SEQ_LEN = 100;
 const VOCAB_SIZE = 78;
 
-let session = null;
+// Singleton pattern: store the PROMISE, not the result
+// This prevents race conditions from React double-renders
+let sessionPromise = null;
+
+// Mutex to prevent concurrent inference calls
+let inferenceInProgress = false;
+let inferenceQueue = [];
 
 // Point to CDN for WASM files (must match installed version 1.21.0)
 ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/";
 
-// Initialize the ONNX session (lazy load)
-async function getSession() {
-  if (!session) {
-    // Fetch from public folder - Vite serves public/ at root
-    const modelUrl = "./model/tricks_gru.onnx";
-    console.log("Loading ONNX model from:", modelUrl);
+// Initialize the ONNX session (lazy load with singleton promise)
+function getSession() {
+  if (!sessionPromise) {
+    sessionPromise = (async () => {
+      // Fetch from public folder - Vite serves public/ at root
+      const modelUrl = "./model/tricks_gru.onnx";
+      console.log("Loading ONNX model from:", modelUrl);
 
-    // Fetch the model as ArrayBuffer and create session from it
-    const response = await fetch(modelUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch model: ${response.status} ${response.statusText}`);
-    }
-    const modelBuffer = await response.arrayBuffer();
-    session = await ort.InferenceSession.create(modelBuffer);
+      // Fetch the model as ArrayBuffer and create session from it
+      const response = await fetch(modelUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch model: ${response.status} ${response.statusText}`);
+      }
+      const modelBuffer = await response.arrayBuffer();
+      const session = await ort.InferenceSession.create(modelBuffer);
+      console.log("ONNX session created successfully");
+      return session;
+    })();
   }
-  return session;
+  return sessionPromise;
 }
 
 // Apply softmax to convert logits to probabilities
@@ -46,6 +56,34 @@ function trickToId(abbr) {
 // Convert model ID to trick abbreviation
 function idToTrick(id) {
   return itos[String(id)] ?? null;
+}
+
+/**
+ * Run inference with mutex to prevent "Session already started" errors
+ * ONNX Runtime doesn't support concurrent run() calls on the same session
+ */
+async function runInferenceWithLock(sess, feeds) {
+  // If inference is already running, wait in queue
+  if (inferenceInProgress) {
+    return new Promise((resolve, reject) => {
+      inferenceQueue.push({ feeds, resolve, reject });
+    });
+  }
+
+  inferenceInProgress = true;
+  try {
+    const result = await sess.run(feeds);
+    return result;
+  } finally {
+    inferenceInProgress = false;
+    // Process next item in queue if any
+    if (inferenceQueue.length > 0) {
+      const next = inferenceQueue.shift();
+      runInferenceWithLock(sess, next.feeds)
+        .then(next.resolve)
+        .catch(next.reject);
+    }
+  }
 }
 
 /**
@@ -76,8 +114,8 @@ export async function predictNextTricks(trickHistory) {
       [1, SEQ_LEN]
     );
 
-    // Run inference
-    const results = await sess.run({ input_ids: inputTensor });
+    // Run inference with lock to prevent concurrent calls
+    const results = await runInferenceWithLock(sess, { input_ids: inputTensor });
     const logits = Array.from(results.logits.data);
 
     // Apply softmax
@@ -100,18 +138,20 @@ export async function predictNextTricks(trickHistory) {
 }
 
 /**
- * Filter predictions by orientation only and add rank for heatmap
+ * Filter predictions by orientation and available reverses, add rank for heatmap
  * @param {Array<{abbr: string, probability: number}>} predictions - Raw predictions (sorted by probability)
  * @param {string} currentOrientation - "front" or "back"
  * @param {Array<{abbr: string}>} allPerformedTricks - All tricks done in both passes
  * @param {Array} availableTricks - All available tricks for current ski count
+ * @param {Array<string>} availableReverseAbbrs - Array of reverse abbreviations currently available (e.g., ["RBB", "RLB"])
  * @returns {{top5: Array, heatmap: Map<string, number>}} - Top 5 for display + heatmap ranks for all tricks
  */
 export function filterLegalPredictions(
   predictions,
   currentOrientation,
   allPerformedTricks,
-  availableTricks
+  availableTricks,
+  availableReverseAbbrs = []
 ) {
   // Get set of already performed trick abbreviations (without NC modifier)
   const performedSet = new Set(
@@ -121,12 +161,24 @@ export function filterLegalPredictions(
   // Create a map of available tricks by abbreviation
   const availableMap = new Map(availableTricks.map((t) => [t.abbr, t]));
 
-  // Filter to only tricks matching current orientation
+  // Create set of available reverse abbreviations for quick lookup
+  const availableReverseSet = new Set(availableReverseAbbrs);
+
+  // Filter to only tricks matching current orientation AND valid reverses
   const filtered = predictions
     .filter((pred) => {
       const trickDef = availableMap.get(pred.abbr);
       if (!trickDef) return false;
-      // Only filter by orientation
+
+      // Check if this is a reverse trick (starts with R followed by a letter)
+      const isReverseTrick = /^R[A-Z]/.test(pred.abbr);
+
+      if (isReverseTrick) {
+        // Only allow this reverse if it's in the available reverse options
+        return availableReverseSet.has(pred.abbr);
+      }
+
+      // Non-reverse tricks: filter by orientation
       return trickDef.startPos === currentOrientation;
     })
     .map((pred, index) => {
