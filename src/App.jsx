@@ -26,6 +26,33 @@ export default function App() {
   const [currentPass, setCurrentPass] = useState(1);
   // Store completed passes (array of arrays)
   const [completedPasses, setCompletedPasses] = useState([]);
+  // Skill level (persists in localStorage)
+  const [skillLevel, setSkillLevel] = useState(() => localStorage.getItem("skillLevel") || "advanced");
+  const handleSkillLevelChange = (level) => {
+    setSkillLevel(level);
+    localStorage.setItem("skillLevel", level);
+  };
+  // Custom tricks (persists in localStorage)
+  const [customTricks, setCustomTricks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("customTricks")) || [];
+    } catch { return []; }
+  });
+  const addCustomTrick = (trick) => {
+    const updated = [...customTricks, { ...trick, id: crypto.randomUUID() }];
+    setCustomTricks(updated);
+    localStorage.setItem("customTricks", JSON.stringify(updated));
+  };
+  const removeCustomTrick = (id) => {
+    const updated = customTricks.filter(t => t.id !== id);
+    setCustomTricks(updated);
+    localStorage.setItem("customTricks", JSON.stringify(updated));
+  };
+  const updateCustomTrick = (id, data) => {
+    const updated = customTricks.map(t => t.id === id ? { ...data, id } : t);
+    setCustomTricks(updated);
+    localStorage.setItem("customTricks", JSON.stringify(updated));
+  };
   // Calculator state (persists across tab switches)
   const [calcState, setCalcState] = useState(getInitialCalcState());
   // Calculator state history for undo
@@ -114,6 +141,12 @@ export default function App() {
               calcStateHistory={calcStateHistory}
               setCalcStateHistory={setCalcStateHistory}
               passesForDisplay={getAllPassesForDisplay()}
+              skillLevel={skillLevel}
+              onSkillLevelChange={handleSkillLevelChange}
+              customTricks={customTricks}
+              onAddCustomTrick={addCustomTrick}
+              onRemoveCustomTrick={removeCustomTrick}
+              onUpdateCustomTrick={updateCustomTrick}
             />
           } />
           <Route path="/trick-pass" element={

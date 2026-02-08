@@ -192,8 +192,19 @@ function generateReverseTricks(tricks) {
     }));
 }
 
+// Hydrate a stored custom trick with computed runtime fields
+function hydrateCustomTrick(t) {
+  return {
+    ...t,
+    changesOrientation: t.startPos !== t.endPos,
+    is180Turn: false,
+    canReverse: true,
+    isCustom: true,
+  };
+}
+
 // Helper to get ALL tricks for a given ski count (for AI predictions)
-export function getAllTricksForSkiCount(skiCount) {
+export function getAllTricksForSkiCount(skiCount, customTricks = []) {
   if (skiCount === 2) {
     const baseTricks = [
       ...twoSkiSpinTricks,
@@ -203,7 +214,8 @@ export function getAllTricksForSkiCount(skiCount) {
       ...twoSkiFlipTricks,
     ];
     const reverseTricks = generateReverseTricks(baseTricks);
-    return [...baseTricks, ...reverseTricks];
+    const custom = customTricks.filter(t => t.skiCount === 2).map(hydrateCustomTrick);
+    return [...baseTricks, ...reverseTricks, ...custom];
   }
   const baseTricks = [
     ...oneSkiSpinTricks,
@@ -217,53 +229,58 @@ export function getAllTricksForSkiCount(skiCount) {
     ...toeWakeSpinTricks,
   ];
   const reverseTricks = generateReverseTricks(baseTricks);
-  return [...baseTricks, ...reverseTricks];
+  const custom = customTricks.filter(t => t.skiCount === 1).map(hydrateCustomTrick);
+  return [...baseTricks, ...reverseTricks, ...custom];
 }
 
 // Helper to get tricks by ski count, modifier, wake, and toe state
-export function getTricks(skiCount, modifier, isWake, isToe) {
+export function getTricks(skiCount, modifier, isWake, isToe, customTricks = []) {
+  let baseTricks;
   if (skiCount === 2) {
     if (isWake) {
       switch (modifier) {
-        case "spins": return twoSkiWakeSpinTricks;
-        case "steps": return twoSkiWakeStepTricks;
-        default: return [];
+        case "spins": baseTricks = twoSkiWakeSpinTricks; break;
+        case "steps": baseTricks = twoSkiWakeStepTricks; break;
+        default: baseTricks = [];
+      }
+    } else {
+      switch (modifier) {
+        case "spins": baseTricks = twoSkiSpinTricks; break;
+        case "steps": baseTricks = twoSkiStepTricks; break;
+        case "flips": baseTricks = twoSkiFlipTricks; break;
+        default: baseTricks = twoSkiSpinTricks;
       }
     }
+  } else if (isToe && isWake) {
     switch (modifier) {
-      case "spins": return twoSkiSpinTricks;
-      case "steps": return twoSkiStepTricks;
-      case "flips": return twoSkiFlipTricks;
-      default: return twoSkiSpinTricks;
+      case "spins": baseTricks = toeWakeSpinTricks; break;
+      case "lines": baseTricks = toeStepTricks; break;
+      default: baseTricks = [];
+    }
+  } else if (isToe) {
+    switch (modifier) {
+      case "spins": baseTricks = toeSpinTricks; break;
+      default: baseTricks = [];
+    }
+  } else if (isWake) {
+    switch (modifier) {
+      case "spins": baseTricks = oneSkiWakeSpinTricks; break;
+      case "steps": baseTricks = oneSkiWakeStepTricks; break;
+      default: baseTricks = [];
+    }
+  } else {
+    switch (modifier) {
+      case "spins": baseTricks = oneSkiSpinTricks; break;
+      case "steps": baseTricks = oneSkiStepTricks; break;
+      case "lines": baseTricks = oneSkiLineTricks; break;
+      case "flips": baseTricks = oneSkiFlipTricks; break;
+      default: baseTricks = oneSkiSpinTricks;
     }
   }
 
-  // 1 SKI tricks
-  if (isToe && isWake) {
-    switch (modifier) {
-      case "spins": return toeWakeSpinTricks;
-      default: return [];
-    }
-  }
-  if (isToe) {
-    switch (modifier) {
-      case "spins": return toeSpinTricks;
-      case "steps": return toeStepTricks;
-      default: return [];
-    }
-  }
-  if (isWake) {
-    switch (modifier) {
-      case "spins": return oneSkiWakeSpinTricks;
-      case "steps": return oneSkiWakeStepTricks;
-      default: return [];
-    }
-  }
-  switch (modifier) {
-    case "spins": return oneSkiSpinTricks;
-    case "steps": return oneSkiStepTricks;
-    case "lines": return oneSkiLineTricks;
-    case "flips": return oneSkiFlipTricks;
-    default: return oneSkiSpinTricks;
-  }
+  const matchingCustom = customTricks
+    .filter(t => t.skiCount === skiCount && t.modifier === modifier && t.isWake === isWake && t.isToe === isToe)
+    .map(hydrateCustomTrick);
+
+  return matchingCustom.length > 0 ? [...baseTricks, ...matchingCustom] : baseTricks;
 }

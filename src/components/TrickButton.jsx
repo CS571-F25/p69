@@ -1,5 +1,5 @@
 // Calculate heatmap color: rank 0 = red (hot), higher ranks = blue (cool)
-function getHeatmapStyle(heatRank, heatTotal) {
+export function getHeatmapStyle(heatRank, heatTotal) {
   if (heatRank === undefined || heatTotal === 0) return {};
 
   // Normalize rank to 0-1 range (0 = hottest, 1 = coolest)
@@ -26,11 +26,12 @@ export default function TrickButton({
   heatRank,
   heatTotal,
   description = "",
+  isCustom = false,
 }) {
   const heatStyle = !disabled && !alreadyPerformed ? getHeatmapStyle(heatRank, heatTotal) : {};
   const hasHeat = heatRank !== undefined && heatTotal > 0 && !disabled && !alreadyPerformed;
 
-  const ariaLabel = `${abbr}${description ? `, ${description}` : ""}, ${alreadyPerformed ? "0" : points} points${alreadyPerformed ? ", already performed" : ""}${disabled ? ", unavailable" : ""}`;
+  const ariaLabel = `${abbr}${description ? `, ${description}` : ""}, ${alreadyPerformed ? "0" : points} points${alreadyPerformed ? ", already performed" : ""}${disabled ? ", unavailable" : ""}${isCustom ? ", custom trick" : ""}`;
 
   return (
     <button
@@ -48,10 +49,15 @@ export default function TrickButton({
           : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
       }`}
     >
-      <div className="text-lg sm:text-2xl font-medium">{abbr}</div>
+      <div className="text-sm sm:text-2xl font-medium">{abbr}</div>
       <div className={`text-xs sm:text-sm ${disabled ? "text-gray-500" : hasHeat ? "text-white/80" : "text-gray-300"}`}>
         {alreadyPerformed ? "0" : points} pts
       </div>
+      {isCustom && (
+        <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
+          <span className={`text-[8px] sm:text-[10px] ${disabled ? "text-gray-600" : "text-teal-500"}`}>C</span>
+        </div>
+      )}
       {alreadyPerformed && (
         <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1">
           <span className={`text-xs ${disabled ? "text-gray-500" : "text-yellow-500"}`}>✓</span>
