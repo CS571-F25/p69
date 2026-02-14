@@ -537,7 +537,6 @@ export default function Calculator({
               }`}
             >
               <div className="text-sm sm:text-base">Undo</div>
-              <div className="text-xs sm:text-sm">&nbsp;</div>
             </button>
 
             {/* Clear buttons - show two options on pass 2 */}
