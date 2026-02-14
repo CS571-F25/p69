@@ -383,18 +383,22 @@ export default function Calculator({
           {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
           <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
             {/* Category Modifier Buttons (left) */}
-            <div className="flex flex-col gap-1 sm:gap-2">
-              {modifiers.map((mod) => (
-                <ToggleButton
-                  key={mod.key}
-                  active={modifier === mod.key}
-                  disabled={mod.disabled}
-                  onClick={() => !mod.disabled && handleModifierChange(mod.key)}
-                  style={!mod.disabled ? getModifierHeat(mod.key) : {}}
-                >
-                  {mod.label}
-                </ToggleButton>
-              ))}
+            <div className="flex flex-col gap-1 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
+              {modifiers.map((mod) => {
+                const isActive = modifier === mod.key;
+                return (
+                  <ToggleButton
+                    key={mod.key}
+                    active={isActive}
+                    disabled={mod.disabled}
+                    onClick={() => !mod.disabled && handleModifierChange(mod.key)}
+                    style={!mod.disabled ? getModifierHeat(mod.key) : {}}
+                    className={isActive ? "!font-bold" : ""}
+                  >
+                    {mod.label}
+                  </ToggleButton>
+                );
+              })}
             </div>
 
             {/* Trick Buttons Grid (center) */}
@@ -421,13 +425,14 @@ export default function Calculator({
             </div>
 
             {/* Wake/Toe/NC Modifier Buttons (right) */}
-            <div className="flex flex-col gap-1 sm:gap-2">
+            <div className="flex flex-col gap-1 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
               <ToggleButton
                 active={isWake}
                 variant="orange"
                 disabled={wakeDisabled}
                 onClick={() => updateState({ isWake: !isWake })}
                 style={wakeHeatStyle}
+                className={isWake ? "!font-bold" : ""}
               >
                 Wake
               </ToggleButton>
@@ -445,6 +450,7 @@ export default function Calculator({
                   updateState(updates);
                 }}
                 style={toeHeatStyle}
+                className={isToe ? "!font-bold" : ""}
               >
                 Toe
               </ToggleButton>
@@ -452,6 +458,7 @@ export default function Calculator({
                 active={noCredit}
                 variant="yellow"
                 onClick={() => updateState({ noCredit: !noCredit })}
+                className={noCredit ? "!font-bold" : ""}
               >
                 NC
               </ToggleButton>
@@ -471,7 +478,7 @@ export default function Calculator({
                   onClick={() => handleReverse(secondLastReversibleTrick)}
                   aria-label={`Reverse ${secondLastReversibleTrick.abbr}, ${secondLastReversibleTrick.points} points`}
                   style={hasHeat ? heatStyle : {}}
-                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
                     hasHeat
                       ? "text-white hover:opacity-90 hover:shadow-md"
                       : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
@@ -494,7 +501,7 @@ export default function Calculator({
                   onClick={() => handleReverse(lastReversibleTrick)}
                   aria-label={`Reverse ${lastReversibleTrick.abbr}, ${lastReversibleTrick.points} points`}
                   style={hasHeat ? heatStyle : {}}
-                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-3 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
                     hasHeat
                       ? "text-white hover:opacity-90 hover:shadow-md"
                       : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
@@ -513,7 +520,8 @@ export default function Calculator({
                 aria-label="Reverse trick, unavailable"
                 className="flex-1 min-w-[60px] bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border"
               >
-                REV
+                <div className="text-sm sm:text-base">REV</div>
+                <div className="text-xs sm:text-sm">&nbsp;</div>
               </button>
             )}
 
@@ -528,7 +536,8 @@ export default function Calculator({
                   : "bg-amber-900 hover:bg-amber-700 text-gray-100 border-amber-800 hover:border-amber-600"
               }`}
             >
-              Undo
+              <div className="text-sm sm:text-base">Undo</div>
+              <div className="text-xs sm:text-sm">&nbsp;</div>
             </button>
 
             {/* Clear buttons - show two options on pass 2 */}
@@ -593,7 +602,7 @@ export default function Calculator({
                     type="text"
                     value={customForm.description}
                     onChange={(e) => setCustomForm(f => ({ ...f, description: e.target.value }))}
-                    placeholder="e.g. Moby Dick"
+                    placeholder="Front Flip 540 Back Landing"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -603,7 +612,7 @@ export default function Calculator({
                     type="text"
                     value={customForm.abbr}
                     onChange={(e) => setCustomForm(f => ({ ...f, abbr: e.target.value.toUpperCase() }))}
-                    placeholder="e.g. MD"
+                    placeholder="e.g. FFL5LB"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -823,6 +832,8 @@ export default function Calculator({
             pass1={passesForDisplay.pass1}
             pass2={passesForDisplay.pass2}
             currentPass={currentPass}
+            pass1SkiCount={passesForDisplay.pass1SkiCount}
+            pass2SkiCount={passesForDisplay.pass2SkiCount}
             recommendations={
               <TrickRecommendations
                 trickHistory={allTricks}

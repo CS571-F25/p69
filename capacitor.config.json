@@ -1,0 +1,14 @@
+{
+  "appId": "com.trickskicalc.app",
+  "appName": "TrickSki Calculator",
+  "webDir": "docs",
+  "ios": {
+    "allowsBackForwardNavigationGestures": false
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    }
+  }
+}

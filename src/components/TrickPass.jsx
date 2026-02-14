@@ -3,7 +3,7 @@ import PassSection from "./PassSection.jsx";
 import { calculatePassTotal, formatTrickList } from "../utils/trickUtils.js";
 
 export default function TrickPass({ passes }) {
-  const { pass1, pass2 } = passes;
+  const { pass1, pass2, pass1SkiCount, pass2SkiCount } = passes;
   const [copied, setCopied] = useState(false);
 
   const pass1Total = calculatePassTotal(pass1);
@@ -11,7 +11,7 @@ export default function TrickPass({ passes }) {
   const grandTotal = pass1Total + pass2Total;
 
   const handleCopy = async () => {
-    const text = formatTrickList(pass1, pass2);
+    const text = formatTrickList(pass1, pass2, pass1SkiCount, pass2SkiCount);
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -49,7 +49,7 @@ export default function TrickPass({ passes }) {
           {/* Pass 1 - no title if only one pass */}
           <div className={pass2.length > 0 ? "mb-4" : ""}>
             <PassSection
-              title={pass2.length > 0 ? "Pass 1" : null}
+              title={pass2.length > 0 ? `Pass 1 (${pass1SkiCount} ski${pass1SkiCount !== 1 ? 's' : ''})` : (pass1SkiCount != null ? `${pass1SkiCount} ski${pass1SkiCount !== 1 ? 's' : ''}` : null)}
               tricks={pass1}
               total={pass1Total}
             />
@@ -58,7 +58,7 @@ export default function TrickPass({ passes }) {
           {/* Pass 2 - only show if has tricks */}
           {pass2.length > 0 && (
             <PassSection
-              title="Pass 2"
+              title={`Pass 2 (${pass2SkiCount} ski${pass2SkiCount !== 1 ? 's' : ''})`}
               tricks={pass2}
               total={pass2Total}
             />

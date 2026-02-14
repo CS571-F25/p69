@@ -2,13 +2,13 @@ import { useState } from "react";
 import { calculatePassTotal, formatTrickList } from "../utils/trickUtils.js";
 
 // Compact trick list sidebar for calculator view
-export default function TrickListSidebar({ pass1, pass2, currentPass, recommendations }) {
+export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCount, pass2SkiCount, recommendations }) {
   const [copied, setCopied] = useState(false);
   const pass1Total = calculatePassTotal(pass1);
   const pass2Total = calculatePassTotal(pass2);
 
   const handleCopy = async () => {
-    const text = formatTrickList(pass1, pass2);
+    const text = formatTrickList(pass1, pass2, pass1SkiCount, pass2SkiCount);
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -16,10 +16,12 @@ export default function TrickListSidebar({ pass1, pass2, currentPass, recommenda
 
   const hasTricks = pass1.length > 0 || pass2.length > 0;
 
-  const renderTrickList = (tricks, passNum, total, isCurrent) => (
+  const renderTrickList = (tricks, passNum, total, isCurrent, skiCount) => (
     <div className={`mb-3 ${isCurrent ? '' : 'opacity-70'}`}>
       <div className="flex justify-between items-center mb-1 pb-1 border-b border-slate-700">
-        <span className="text-xs font-medium text-gray-300">Pass {passNum}</span>
+        <span className="text-xs font-medium text-gray-300">
+          Pass {passNum}{skiCount != null && <span className="text-gray-500"> ({skiCount} ski{skiCount !== 1 ? 's' : ''})</span>}
+        </span>
         <span className="text-xs text-blue-400">{total}</span>
       </div>
       {tricks.length === 0 ? (
@@ -61,8 +63,8 @@ export default function TrickListSidebar({ pass1, pass2, currentPass, recommenda
           </div>
         )}
       </div>
-      {renderTrickList(pass1, 1, pass1Total, currentPass === 1)}
-      {(currentPass === 2 || pass2.length > 0) && renderTrickList(pass2, 2, pass2Total, currentPass === 2)}
+      {renderTrickList(pass1, 1, pass1Total, currentPass === 1, pass1SkiCount)}
+      {(currentPass === 2 || pass2.length > 0) && renderTrickList(pass2, 2, pass2Total, currentPass === 2, pass2SkiCount)}
       <div className="pt-2 border-t border-slate-700">
         <div className="flex justify-between items-center">
           <span className="text-xs font-medium text-gray-300">Total</span>

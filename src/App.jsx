@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import NavLink from "./components/NavLink.jsx";
 import Calculator from "./components/Calculator.jsx";
 import TrickPass from "./components/TrickPass.jsx";
@@ -53,6 +54,15 @@ export default function App() {
     setCustomTricks(updated);
     localStorage.setItem("customTricks", JSON.stringify(updated));
   };
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      import("@capacitor/status-bar").then(({ StatusBar, Style }) => {
+        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+        StatusBar.setBackgroundColor({ color: "#0f172a" }).catch(() => {});
+      }).catch(() => {});
+    }
+  }, []);
+
   // Calculator state (persists across tab switches)
   const [calcState, setCalcState] = useState(getInitialCalcState());
   // Calculator state history for undo
@@ -70,9 +80,12 @@ export default function App() {
     return false;
   };
 
+  // Store ski count for completed pass 1
+  const [pass1SkiCount, setPass1SkiCount] = useState(null);
+
   const startSecondPass = () => {
     if (currentPass === 1 && currentPassTricks.length > 0) {
-      // Save first pass and start second
+      setPass1SkiCount(calcState.skiCount);
       setCompletedPasses([currentPassTricks]);
       setCurrentPassTricks([]);
       setCurrentPass(2);
@@ -85,6 +98,7 @@ export default function App() {
     setCurrentPassTricks([]);
     setCompletedPasses([]);
     setCurrentPass(1);
+    setPass1SkiCount(null);
     setCalcState(getInitialCalcState());
     setCalcStateHistory([]);
   };
@@ -103,28 +117,28 @@ export default function App() {
   // Get all tricks for display in TrickPass
   const getAllPassesForDisplay = () => {
     if (currentPass === 1) {
-      return { pass1: currentPassTricks, pass2: [] };
+      return { pass1: currentPassTricks, pass2: [], pass1SkiCount: calcState.skiCount, pass2SkiCount: null };
     } else {
-      return { pass1: completedPasses[0] || [], pass2: currentPassTricks };
+      return { pass1: completedPasses[0] || [], pass2: currentPassTricks, pass1SkiCount, pass2SkiCount: calcState.skiCount };
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-100">
       {/* Navigation */}
-      <nav className="p-3 sm:p-6 bg-slate-950 relative" aria-label="Main navigation">
-        <div className="flex gap-6 sm:gap-12 items-center justify-center">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 sm:static sm:relative px-3 pt-2 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
+        <div className="flex gap-6 sm:gap-12 items-start sm:items-center justify-center">
           <NavLink to="/">Calculator</NavLink>
           <NavLink to="/trick-pass">Trick Pass</NavLink>
           <NavLink to="/trick-guide">Trick Guide</NavLink>
           <NavLink to="/about">About</NavLink>
         </div>
         {/* Glowing blue gradient line */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 shadow-[0_0_4px_rgba(59,130,246,0.3)]"></div>
+        <div className="absolute top-0 sm:top-auto sm:bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 shadow-[0_0_4px_rgba(59,130,246,0.3)]"></div>
       </nav>
 
       {/* Page Content */}
-      <div className="p-2 sm:p-6">
+      <div className="p-2 sm:p-6 pt-[env(safe-area-inset-top)] pb-20 sm:pb-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <Routes>
           <Route path="/" element={
             <Calculator
