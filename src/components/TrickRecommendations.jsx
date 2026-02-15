@@ -9,6 +9,7 @@ export default function TrickRecommendations({
   availableReverseAbbrs = [], // Array of currently available reverse trick abbreviations
   onTrickClick,
   onHeatmapUpdate, // Callback to pass heatmap to parent (stored in ref, won't cause re-render)
+  skillLevel,
 }) {
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -90,8 +91,11 @@ export default function TrickRecommendations({
   }
 
   return (
-    <div className="space-y-1">
-      <div className="text-xs text-gray-300 mb-1">AI Suggestions</div>
+    <div className="space-y-1 border border-orange-500/30 rounded-lg p-2">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-xs text-orange-300/80">AI Suggestions</div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-300/80 capitalize">{skillLevel}</span>
+      </div>
       {predictions.map((pred, idx) => (
         <button
           key={pred.abbr}
@@ -100,7 +104,7 @@ export default function TrickRecommendations({
           className={`w-full flex items-center justify-between p-1.5 rounded text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-800 ${
             pred.alreadyPerformed
               ? "bg-slate-800/50 text-gray-400 border border-slate-700/50"
-              : "bg-slate-700/50 hover:bg-blue-900/50 text-gray-200 border border-slate-600/50 hover:border-blue-700/50"
+              : "bg-slate-700/50 hover:bg-blue-900/50 text-gray-200 border border-orange-500/30 hover:border-orange-400/50"
           }`}
         >
           <div className="flex items-center gap-2">
