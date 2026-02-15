@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
 import NavLink from "./components/NavLink.jsx";
 import Calculator from "./components/Calculator.jsx";
 import TrickPass from "./components/TrickPass.jsx";
@@ -27,33 +28,41 @@ export default function App() {
   const [currentPass, setCurrentPass] = useState(1);
   // Store completed passes (array of arrays)
   const [completedPasses, setCompletedPasses] = useState([]);
-  // Skill level (persists in localStorage)
-  const [skillLevel, setSkillLevel] = useState(() => localStorage.getItem("skillLevel") || "advanced");
+  // Skill level
+  const [skillLevel, setSkillLevel] = useState("advanced");
   const handleSkillLevelChange = (level) => {
     setSkillLevel(level);
-    localStorage.setItem("skillLevel", level);
+    Preferences.set({ key: "skillLevel", value: level });
   };
-  // Custom tricks (persists in localStorage)
-  const [customTricks, setCustomTricks] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("customTricks")) || [];
-    } catch { return []; }
-  });
+  // Custom tricks
+  const [customTricks, setCustomTricks] = useState([]);
   const addCustomTrick = (trick) => {
     const updated = [...customTricks, { ...trick, id: crypto.randomUUID() }];
     setCustomTricks(updated);
-    localStorage.setItem("customTricks", JSON.stringify(updated));
+    Preferences.set({ key: "customTricks", value: JSON.stringify(updated) });
   };
   const removeCustomTrick = (id) => {
     const updated = customTricks.filter(t => t.id !== id);
     setCustomTricks(updated);
-    localStorage.setItem("customTricks", JSON.stringify(updated));
+    Preferences.set({ key: "customTricks", value: JSON.stringify(updated) });
   };
   const updateCustomTrick = (id, data) => {
     const updated = customTricks.map(t => t.id === id ? { ...data, id } : t);
     setCustomTricks(updated);
-    localStorage.setItem("customTricks", JSON.stringify(updated));
+    Preferences.set({ key: "customTricks", value: JSON.stringify(updated) });
   };
+
+  // Load persisted settings
+  useEffect(() => {
+    Preferences.get({ key: "skillLevel" }).then(({ value }) => {
+      if (value) setSkillLevel(value);
+    });
+    Preferences.get({ key: "customTricks" }).then(({ value }) => {
+      if (value) {
+        try { setCustomTricks(JSON.parse(value)); } catch {}
+      }
+    });
+  }, []);
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       import("@capacitor/status-bar").then(({ StatusBar, Style }) => {
