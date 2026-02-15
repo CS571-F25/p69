@@ -1,4 +1,4 @@
-import * as ort from "onnxruntime-web";
+import * as ort from "onnxruntime-web/wasm";
 import stoi from "../model/stoi.json";
 import itos from "../model/itos.json";
 
