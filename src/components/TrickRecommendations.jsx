@@ -91,36 +91,32 @@ export default function TrickRecommendations({
   }
 
   return (
-    <div className="space-y-1 border border-orange-500/30 rounded-lg p-2">
-      <div className="flex items-center justify-between mb-1">
+    <div className="border border-orange-500/30 rounded-lg p-2">
+      <div className="flex items-center justify-between mb-1.5">
         <div className="text-xs text-orange-300/80">AI Suggestions</div>
         <span className="text-[10px] px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-300/80 capitalize">{skillLevel}</span>
       </div>
-      {predictions.map((pred, idx) => (
-        <button
-          key={pred.abbr}
-          onClick={() => onTrickClick && onTrickClick(pred.abbr)}
-          aria-label={`${pred.abbr}, ${pred.points} points${pred.alreadyPerformed ? ", already performed" : ""}`}
-          className={`w-full flex items-center justify-between p-1.5 rounded text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-800 ${
-            pred.alreadyPerformed
-              ? "bg-slate-800/50 text-gray-400 border border-slate-700/50"
-              : "bg-slate-700/50 hover:bg-blue-900/50 text-gray-200 border border-orange-500/30 hover:border-orange-400/50"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 w-3">{idx + 1}.</span>
-            <span className={`font-medium ${pred.alreadyPerformed ? "text-gray-400" : "text-blue-300"}`}>
+      <div className="flex gap-1.5">
+        {predictions.map((pred) => (
+          <button
+            key={pred.abbr}
+            onClick={() => onTrickClick && onTrickClick(pred.abbr)}
+            aria-label={`${pred.abbr}, ${pred.points} points${pred.alreadyPerformed ? ", already performed" : ""}`}
+            className={`flex-1 flex flex-col items-center justify-center py-1.5 sm:py-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-800 ${
+              pred.alreadyPerformed
+                ? "bg-slate-800/50 text-gray-400 border border-slate-700/50"
+                : "bg-orange-800/50 hover:bg-orange-700/50 text-gray-100 border border-orange-500/50 hover:border-orange-400/70"
+            }`}
+          >
+            <span className={`text-[10px] sm:text-xs font-medium leading-tight ${pred.alreadyPerformed ? "text-gray-400 line-through" : "text-blue-300"}`}>
               {pred.abbr}
             </span>
-            {pred.alreadyPerformed && (
-              <span className="text-yellow-500 text-xs">done</span>
-            )}
-          </div>
-          <span className={pred.alreadyPerformed ? "text-gray-400" : "text-gray-300"}>
-            {pred.points} pts
-          </span>
-        </button>
-      ))}
+            <span className={`text-[9px] sm:text-[10px] leading-tight ${pred.alreadyPerformed ? "text-gray-500" : "text-gray-400"}`}>
+              {pred.points}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { calculatePassTotal, formatTrickList, copyToClipboard } from "../utils/trickUtils.js";
 
 // Compact trick list sidebar for calculator view
-export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCount, pass2SkiCount, recommendations }) {
+export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCount, pass2SkiCount }) {
   const [copied, setCopied] = useState(false);
   const pass1Total = calculatePassTotal(pass1);
   const pass2Total = calculatePassTotal(pass2);
@@ -74,12 +74,6 @@ export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCo
         </div>
       </div>
 
-      {/* AI Recommendations */}
-      {recommendations && (
-        <div className="mt-3 pt-3 border-t border-slate-700">
-          {recommendations}
-        </div>
-      )}
     </div>
   );
 }

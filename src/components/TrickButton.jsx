@@ -1,19 +1,24 @@
-// Calculate heatmap color: rank 0 = red (hot), higher ranks = blue (cool)
+// Calculate heatmap color: rank 0 = warm, higher ranks = cool
+// Colors are muted by blending toward slate gray for a subtler look
 export function getHeatmapStyle(heatRank, heatTotal) {
   if (heatRank === undefined || heatTotal === 0) return {};
 
-  // Normalize rank to 0-1 range (0 = hottest, 1 = coolest)
   const normalized = Math.min(heatRank / Math.max(heatTotal - 1, 1), 1);
 
-  // Interpolate from red (hot) to blue (cool)
-  // Red: rgb(239, 68, 68) -> Blue: rgb(59, 130, 246)
-  const r = Math.round(239 - normalized * (239 - 59));
-  const g = Math.round(68 + normalized * (130 - 68));
-  const b = Math.round(68 + normalized * (246 - 68));
+  // Base colors: red (hot) -> blue (cool)
+  const baseR = 239 - normalized * (239 - 59);
+  const baseG = 68 + normalized * (130 - 68);
+  const baseB = 68 + normalized * (246 - 68);
+
+  // Blend 30% toward slate gray (100, 116, 139) to mute
+  const mix = 0.3;
+  const r = Math.round(baseR * (1 - mix) + 100 * mix);
+  const g = Math.round(baseG * (1 - mix) + 116 * mix);
+  const b = Math.round(baseB * (1 - mix) + 139 * mix);
 
   return {
     backgroundColor: `rgb(${r}, ${g}, ${b})`,
-    borderColor: `rgb(${Math.max(r - 30, 0)}, ${Math.max(g - 30, 0)}, ${Math.max(b - 30, 0)})`,
+    borderColor: `rgb(${Math.max(r - 20, 0)}, ${Math.max(g - 20, 0)}, ${Math.max(b - 20, 0)})`,
   };
 }
 
@@ -43,14 +48,14 @@ export default function TrickButton({
         disabled
           ? "bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50"
           : alreadyPerformed
-          ? "bg-slate-800 hover:bg-blue-800 text-gray-100 border-yellow-600 hover:border-yellow-500 hover:shadow-md hover:shadow-yellow-900/20"
+          ? "text-gray-300 hover:opacity-90 hover:shadow-md [background-color:rgb(134,94,152)] [border-color:rgb(114,74,132)]"
           : hasHeat
           ? "text-white hover:opacity-90 hover:shadow-md"
           : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
       }`}
     >
-      <div className="text-sm sm:text-2xl font-medium">{abbr}</div>
-      <div className={`text-xs sm:text-sm ${disabled ? "text-gray-500" : hasHeat ? "text-white/80" : "text-gray-300"}`}>
+      <div className={`${abbr.length > 4 ? "text-[10px]" : "text-sm"} sm:text-2xl font-medium`}>{abbr}</div>
+      <div className={`text-[9px] sm:text-sm whitespace-nowrap ${disabled ? "text-gray-500" : hasHeat ? "text-white/80" : "text-gray-300"}`}>
         {alreadyPerformed ? "0" : points} pts
       </div>
       {isCustom && (
@@ -60,7 +65,7 @@ export default function TrickButton({
       )}
       {alreadyPerformed && (
         <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1">
-          <span className={`text-xs ${disabled ? "text-gray-500" : "text-yellow-500"}`}>✓</span>
+          <span className={`text-xs ${disabled ? "text-gray-500" : "text-gray-400"}`}>✓</span>
         </div>
       )}
     </button>

@@ -29,7 +29,7 @@ export default function App() {
   // Store completed passes (array of arrays)
   const [completedPasses, setCompletedPasses] = useState([]);
   // Skill level
-  const [skillLevel, setSkillLevel] = useState("advanced");
+  const [skillLevel, setSkillLevel] = useState("beginner");
   const handleSkillLevelChange = (level) => {
     setSkillLevel(level);
     Preferences.set({ key: "skillLevel", value: level });

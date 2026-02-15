@@ -8,10 +8,10 @@ import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 
 const SKILL_LEVELS = [
-  { key: "beginner", label: "Beginner", range: "0-1k" },
-  { key: "intermediate", label: "Intermediate", range: "1-2k" },
-  { key: "advanced", label: "Advanced", range: "2-7k" },
-  { key: "pro", label: "Pro", range: "7k+" },
+  { key: "beginner", label: "Beginner", range: "0-1k pts" },
+  { key: "intermediate", label: "Intermediate", range: "1k-2k pts" },
+  { key: "advanced", label: "Advanced", range: "2k-7k pts" },
+  { key: "pro", label: "Pro", range: "7k+ pts" },
 ];
 
 export default function Calculator({
@@ -39,6 +39,8 @@ export default function Calculator({
 
   // Heatmap state - only updated when predictions change
   const [heatmapData, setHeatmapData] = useState({ map: new Map(), total: 0 });
+
+  const [showSkillInfo, setShowSkillInfo] = useState(false);
 
   // Custom trick form state
   const [showCustomForm, setShowCustomForm] = useState(false);
@@ -267,118 +269,190 @@ export default function Calculator({
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-3 py-4 sm:p-6">
+    <div className="max-w-6xl mx-auto px-3 py-4 sm:px-6 sm:pt-2 sm:pb-6">
       <h1 className="sr-only">Trick Calculator</h1>
       <div className="flex gap-6">
         {/* Main Calculator Section */}
         <div className="flex-1 min-w-0">
-          {/* Total Display */}
-          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-slate-700">
-            <div className="flex justify-between items-end">
-              <StatsCard label={`Pass ${currentPass} Points`} value={passTotal} variant="primary" size="large" />
-              {currentPass === 2 && (
-                <StatsCard label="Total (Both Passes)" value={allTotal} variant="secondary" size="medium" />
-              )}
-            </div>
-          </div>
-
-          {/* Skill Level Selector */}
-          {!passStarted && currentPass === 1 && (
-            <div className="mb-3 sm:mb-4">
-              <div className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Skill Level <span className="text-[10px] text-orange-300/80">*Improves AI Suggestions*</span></div>
-              <div className="flex gap-1 sm:gap-2">
-                {SKILL_LEVELS.map((level) => (
-                  <ToggleButton
-                    key={level.key}
-                    active={skillLevel === level.key}
-                    onClick={() => onSkillLevelChange(level.key)}
-                    className="flex-1 py-1.5 sm:py-2"
-                  >
-                    <div>{level.label}</div>
-                    <div className="text-[10px] sm:text-xs text-gray-400">{level.range}</div>
-                  </ToggleButton>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Starting Configuration - Expanded before pass starts */}
+          {/* Score + Config Row */}
           {!passStarted ? (
-            <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
-              {/* Ski Count Selector */}
-              <div className="flex-1">
-                <div className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Skis</div>
-                <div className="flex gap-1 sm:gap-2">
-                  <ToggleButton
-                    active={skiCount === 1}
-                    onClick={() => updateState({ skiCount: 1 })}
-                    className="flex-1 py-1.5 sm:py-2"
-                  >
-                    1 Ski
-                  </ToggleButton>
-                  <ToggleButton
-                    active={skiCount === 2}
-                    onClick={() => updateState({ skiCount: 2 })}
-                    className="flex-1 py-1.5 sm:py-2"
-                  >
-                    2 Skis
-                  </ToggleButton>
+            <div className="flex gap-2 mb-4 sm:mb-6">
+              {/* Score Box */}
+              <div className="flex-shrink-0 w-[28%] sm:w-[25%] rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5">
+                <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 p-3 sm:p-4 flex flex-col justify-center h-full">
+                  {currentPass === 2 && (
+                    <div className="mb-1">
+                      <StatsCard label="Both Passes" value={allTotal} variant="secondary" size="small" />
+                    </div>
+                  )}
+                  <StatsCard label={`Pass ${currentPass} Points`} value={passTotal} variant="primary" size="large" />
                 </div>
               </div>
 
-              {/* Starting Orientation */}
-              <div className="flex-1">
-                <div className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Starting Position</div>
-                <div className="flex gap-1 sm:gap-2">
-                  <ToggleButton
-                    active={orientation === "front"}
-                    onClick={() => updateState({ orientation: "front" })}
-                    className="flex-1 py-1.5 sm:py-2"
-                  >
-                    Front
-                  </ToggleButton>
-                  <ToggleButton
-                    active={orientation === "back"}
-                    onClick={() => updateState({ orientation: "back" })}
-                    className="flex-1 py-1.5 sm:py-2"
-                  >
-                    Back
-                  </ToggleButton>
+              {/* Config Box */}
+              <div className="flex-1 min-w-0 bg-slate-800 rounded-lg p-3 sm:p-4 border border-slate-700 flex flex-col justify-between">
+                {/* Skill Level */}
+                {currentPass === 1 && (
+                  <div className="mb-1.5 sm:mb-2">
+                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1 flex items-center gap-1">
+                      <span className="cursor-pointer" onClick={() => setShowSkillInfo(s => !s)}>
+                        Skill Level
+                      </span>
+                      <button
+                        onClick={() => setShowSkillInfo(s => !s)}
+                        className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-gray-500 text-gray-400 hover:text-gray-200 hover:border-gray-300 transition-colors text-[8px] sm:text-[10px] leading-none"
+                        aria-label="About skill level"
+                      >
+                        i
+                      </button>
+                      {showSkillInfo && (
+                        <span
+                          className="text-[7px] sm:text-[10px] text-gray-500 cursor-pointer"
+                          onClick={() => setShowSkillInfo(false)}
+                        >
+                          helps us suggest tricks based off passes at your skill level
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {SKILL_LEVELS.map((level) => (
+                        <ToggleButton
+                          key={level.key}
+                          active={skillLevel === level.key}
+                          onClick={() => onSkillLevelChange(level.key)}
+                          className="!py-0.5 !text-[7px] sm:!text-sm !px-0.5 !leading-tight"
+                        >
+                          <div>{level.label}</div>
+                          <div className="text-[8px] sm:text-[10px] opacity-60 font-normal">{level.range}</div>
+                        </ToggleButton>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Position + Skis */}
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1">Position</div>
+                    <div className="flex gap-2">
+                      <ToggleButton
+                        active={orientation === "front"}
+                        onClick={() => updateState({ orientation: "front" })}
+                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
+                      >
+                        Front
+                      </ToggleButton>
+                      <ToggleButton
+                        active={orientation === "back"}
+                        onClick={() => updateState({ orientation: "back" })}
+                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
+                      >
+                        Back
+                      </ToggleButton>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1">Skis</div>
+                    <div className="flex gap-2">
+                      <ToggleButton
+                        active={skiCount === 1}
+                        onClick={() => updateState({ skiCount: 1 })}
+                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
+                      >
+                        1 Ski
+                      </ToggleButton>
+                      <ToggleButton
+                        active={skiCount === 2}
+                        onClick={() => updateState({ skiCount: 2 })}
+                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
+                      >
+                        2 Skis
+                      </ToggleButton>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            /* Compact Status - After pass starts */
-            <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="flex gap-4 sm:gap-6">
-                <div>
-                  <span className="text-xs sm:text-sm text-gray-400">Position: </span>
-                  <span className="text-sm sm:text-lg font-medium text-blue-400 capitalize">{orientation}</span>
-                </div>
-                <div>
-                  <span className="text-xs sm:text-sm text-gray-400">Skis: </span>
-                  <span className="text-sm sm:text-lg font-medium text-blue-400">{skiCount}</span>
-                </div>
-                <div>
-                  <span className="text-xs sm:text-sm text-gray-400">Level: </span>
-                  <span className="text-sm sm:text-lg font-medium text-blue-400 capitalize">{skillLevel}</span>
+            /* Compact Status - score + info in a row */
+            <div className="flex items-end gap-6 sm:gap-10 mb-4 sm:mb-6">
+              {/* Score Box - expands to fill */}
+              <div className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5">
+                <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 p-3 sm:p-4 flex flex-col justify-center">
+                  {currentPass === 2 && (
+                    <div className="mb-1">
+                      <StatsCard label="Both Passes" value={allTotal} variant="secondary" size="small" />
+                    </div>
+                  )}
+                  <StatsCard label={`Pass ${currentPass} Points`} value={passTotal} variant="primary" size="large" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 sm:gap-4">
-                <span className="text-xs sm:text-sm text-gray-400">Pass {currentPass} of 2</span>
-                {currentPass === 1 && (
-                  <ToggleButton
-                    active={true}
-                    variant="green"
-                    onClick={startSecondPass}
-                    ariaLabel="Start second pass"
-                  >
-                    Start Pass 2
-                  </ToggleButton>
-                )}
+
+              {/* Compact info — two rows on mobile, one row on desktop */}
+              <div className="flex-shrink-0 flex flex-col items-end gap-1.5 sm:gap-0.5">
+                <div className="flex flex-wrap justify-end gap-x-3 sm:gap-x-5">
+                  <div>
+                    <span className="text-[10px] sm:text-xs text-gray-400">Position: </span>
+                    <span className="text-xs sm:text-sm font-medium text-blue-400 capitalize">{orientation}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] sm:text-xs text-gray-400">Skis: </span>
+                    <span className="text-xs sm:text-sm font-medium text-blue-400">{skiCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] sm:text-xs text-gray-400">Level: </span>
+                    <span className="text-xs sm:text-sm font-medium text-blue-400 capitalize">{skillLevel}</span>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs text-gray-400">Pass {currentPass} of 2</span>
+                    {currentPass === 1 && (
+                      <ToggleButton
+                        active={true}
+                        variant="green"
+                        onClick={startSecondPass}
+                        ariaLabel="Start second pass"
+                        className="!py-1 !text-xs"
+                      >
+                        Start Pass 2
+                      </ToggleButton>
+                    )}
+                  </div>
+                </div>
+                <div className="flex sm:hidden items-center gap-2">
+                  <span className="text-[10px] text-gray-400">Pass {currentPass} of 2</span>
+                  {currentPass === 1 && (
+                    <ToggleButton
+                      active={true}
+                      variant="green"
+                      onClick={startSecondPass}
+                      ariaLabel="Start second pass"
+                      className="!py-1 !text-xs"
+                    >
+                      Start Pass 2
+                    </ToggleButton>
+                  )}
+                </div>
               </div>
             </div>
           )}
+
+          {/* AI Suggestions */}
+          <div className="mb-4 sm:mb-6">
+            <TrickRecommendations
+              trickHistory={allTricks}
+              currentOrientation={orientation}
+              allPerformedTricks={allTricks}
+              availableTricks={allTricksForSki}
+              availableReverseAbbrs={availableReverseAbbrs}
+              onTrickClick={(abbr) => {
+                const trick = allTricksForSki.find((t) => t.abbr === abbr);
+                if (trick && trick.startPos === orientation) {
+                  handleTrickClick(trick);
+                }
+              }}
+              onHeatmapUpdate={handleHeatmapUpdate}
+              skillLevel={skillLevel}
+            />
+          </div>
 
           {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
           <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
@@ -806,24 +880,6 @@ export default function Calculator({
             </div>
           )}
 
-          {/* AI Recommendations - mobile only */}
-          <div className="lg:hidden mt-4 bg-slate-800 rounded-lg p-3 border border-slate-700">
-            <TrickRecommendations
-              trickHistory={allTricks}
-              currentOrientation={orientation}
-              allPerformedTricks={allTricks}
-              availableTricks={allTricksForSki}
-              availableReverseAbbrs={availableReverseAbbrs}
-              onTrickClick={(abbr) => {
-                const trick = allTricksForSki.find((t) => t.abbr === abbr);
-                if (trick && trick.startPos === orientation) {
-                  handleTrickClick(trick);
-                }
-              }}
-              onHeatmapUpdate={handleHeatmapUpdate}
-              skillLevel={skillLevel}
-            />
-          </div>
         </div>
 
         {/* Trick List Sidebar - hidden on small screens */}
@@ -834,23 +890,6 @@ export default function Calculator({
             currentPass={currentPass}
             pass1SkiCount={passesForDisplay.pass1SkiCount}
             pass2SkiCount={passesForDisplay.pass2SkiCount}
-            recommendations={
-              <TrickRecommendations
-                trickHistory={allTricks}
-                currentOrientation={orientation}
-                allPerformedTricks={allTricks}
-                availableTricks={allTricksForSki}
-                availableReverseAbbrs={availableReverseAbbrs}
-                onTrickClick={(abbr) => {
-                  const trick = allTricksForSki.find((t) => t.abbr === abbr);
-                  if (trick && trick.startPos === orientation) {
-                    handleTrickClick(trick);
-                  }
-                }}
-                onHeatmapUpdate={handleHeatmapUpdate}
-                skillLevel={skillLevel}
-              />
-            }
           />
         </div>
       </div>
