@@ -8,7 +8,7 @@ import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 
 const SKILL_LEVELS = [
-  { key: "beginner", label: "Beginner", range: "0-1000" },
+  { key: "beginner", label: "Beginner", range: "0-1k" },
   { key: "intermediate", label: "Intermediate", range: "1-2k" },
   { key: "advanced", label: "Advanced", range: "2-7k" },
   { key: "pro", label: "Pro", range: "7k+" },
@@ -283,9 +283,9 @@ export default function Calculator({
           </div>
 
           {/* Skill Level Selector */}
-          {!passStarted && (
+          {!passStarted && currentPass === 1 && (
             <div className="mb-3 sm:mb-4">
-              <div className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Skill Level</div>
+              <div className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Skill Level <span className="text-[10px] text-orange-300/80">*Improves AI Suggestions*</span></div>
               <div className="flex gap-1 sm:gap-2">
                 {SKILL_LEVELS.map((level) => (
                   <ToggleButton
@@ -589,7 +589,7 @@ export default function Calculator({
             }}
             className="mt-3 sm:mt-4 w-full py-2 sm:py-3 rounded-lg border-2 border-dashed border-slate-600 text-gray-400 hover:border-slate-500 hover:text-gray-300 transition-all text-sm sm:text-base"
           >
-            {showCustomForm ? "Cancel" : "+ Custom"}
+            {showCustomForm ? "Cancel" : "+ Custom Tricks"}
           </button>
 
           {showCustomForm && (
@@ -821,6 +821,7 @@ export default function Calculator({
                 }
               }}
               onHeatmapUpdate={handleHeatmapUpdate}
+              skillLevel={skillLevel}
             />
           </div>
         </div>
@@ -847,6 +848,7 @@ export default function Calculator({
                   }
                 }}
                 onHeatmapUpdate={handleHeatmapUpdate}
+                skillLevel={skillLevel}
               />
             }
           />
