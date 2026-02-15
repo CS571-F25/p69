@@ -126,7 +126,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-gray-100">
       {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-8 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-4 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
         <div className="flex gap-6 sm:gap-12 items-start sm:items-center justify-center">
           <NavLink to="/">Calculator</NavLink>
           <NavLink to="/trick-pass">Trick Pass</NavLink>
@@ -138,7 +138,7 @@ export default function App() {
       </nav>
 
       {/* Page Content */}
-      <div className="p-2 sm:p-6 pt-[env(safe-area-inset-top)] pb-20 sm:pb-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <div className="p-2 sm:p-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-28 sm:pb-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <Routes>
           <Route path="/" element={
             <Calculator
