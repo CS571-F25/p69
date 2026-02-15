@@ -199,8 +199,11 @@ export function filterLegalPredictions(
     heatmap.set(pred.abbr, pred.rank);
   });
 
+  // Only suggest tricks that haven't been performed yet
+  const unperformed = filtered.filter((pred) => !pred.alreadyPerformed);
+
   return {
-    top5: filtered.slice(0, 5),
+    top5: unperformed.slice(0, 5),
     heatmap,
     totalFiltered: filtered.length,
   };

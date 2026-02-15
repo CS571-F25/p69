@@ -175,20 +175,17 @@ export default function Calculator({
 
   const handleModifierChange = (newModifier) => {
     const updates = { modifier: newModifier };
-    // Auto-disable wake/toe for invalid combinations
+    // Auto-adjust conflicting toggles
     if (newModifier === "flips") {
       updates.isWake = false;
       updates.isToe = false;
     }
     if (newModifier === "lines") {
-      updates.isWake = false;
-      // Toe lines are all wake tricks
-      if (isToe) updates.isWake = true;
+      updates.isWake = true;
+      if (skiCount === 2) updates.skiCount = 1;
     }
-    if (newModifier === "steps" && isToe) {
-      // Steps not available for toe, switch won't happen due to disabled state
-      // but guard against it
-      return;
+    if (newModifier === "steps") {
+      updates.isToe = false;
     }
     updateState(updates);
   };
@@ -218,11 +215,6 @@ export default function Calculator({
   // Count flips for 6-flip limit warning
   const flipCount = trickList.filter(t => t.abbr.includes("FL")).length;
 
-  // Check if lines/flips should be disabled
-  const linesDisabled = skiCount === 2;
-  const toeDisabled = skiCount === 2;
-
-  const stepsDisabled = isToe;
 
   // Compute average heatmap style for a set of tricks
   const getAvgHeatStyle = (tricks) => {
@@ -239,33 +231,30 @@ export default function Calculator({
 
   // Compute heat for each modifier tab (simulate auto-adjustments from handleModifierChange)
   const getModifierHeat = (modKey) => {
-    let simWake = isWake, simToe = isToe;
+    // Simulate the same auto-adjustments as handleModifierChange
+    let simWake = isWake, simToe = isToe, simSkiCount = skiCount;
     if (modKey === "flips") { simWake = false; simToe = false; }
-    if (modKey === "lines") { simWake = isToe ? true : false; }
-    return getAvgHeatStyle(getTricks(skiCount, modKey, simWake, simToe, customTricks));
+    if (modKey === "lines") { simWake = true; simSkiCount = 1; }
+    if (modKey === "steps") { simToe = false; }
+    return getAvgHeatStyle(getTricks(simSkiCount, modKey, simWake, simToe, customTricks));
   };
 
   // Heat for Wake button: heat of wake tricks for current modifier/toe
-  const wakeDisabled = modifier === "flips" || (modifier === "lines" && !isToe);
-  const wakeHeatStyle = !wakeDisabled
-    ? getAvgHeatStyle(getTricks(skiCount, modifier, true, isToe, customTricks))
-    : {};
+  const wakeHeatStyle = getAvgHeatStyle(getTricks(skiCount, modifier, true, isToe, customTricks));
 
   // Heat for Toe button: heat of toe tricks (simulate side-effects of toggling toe on)
-  const toeHeatStyle = !toeDisabled && modifier !== "flips"
-    ? (() => {
-        let simMod = modifier, simWake = isWake;
-        if (modifier === "steps") simMod = "spins";
-        if (modifier === "lines") simWake = true;
-        return getAvgHeatStyle(getTricks(skiCount, simMod, simWake, true, customTricks));
-      })()
-    : {};
+  const toeHeatStyle = (() => {
+    let simMod = modifier, simWake = isWake;
+    if (modifier === "steps") simMod = "spins";
+    if (modifier === "lines") simWake = true;
+    return getAvgHeatStyle(getTricks(skiCount, simMod, simWake, true, customTricks));
+  })();
 
   const modifiers = [
-    { key: "spins", label: "Spins", disabled: false },
-    { key: "steps", label: "Steps", disabled: stepsDisabled },
-    { key: "lines", label: "Lines", disabled: linesDisabled },
-    { key: "flips", label: "Flips", disabled: false },
+    { key: "spins", label: "Spins" },
+    { key: "steps", label: "Steps" },
+    { key: "lines", label: "Lines" },
+    { key: "flips", label: "Flips" },
   ];
 
   return (
@@ -464,9 +453,8 @@ export default function Calculator({
                   <ToggleButton
                     key={mod.key}
                     active={isActive}
-                    disabled={mod.disabled}
-                    onClick={() => !mod.disabled && handleModifierChange(mod.key)}
-                    style={!mod.disabled ? getModifierHeat(mod.key) : {}}
+                    onClick={() => handleModifierChange(mod.key)}
+                    style={getModifierHeat(mod.key)}
                     className={isActive ? "!font-bold" : ""}
                   >
                     {mod.label}
@@ -503,8 +491,17 @@ export default function Calculator({
               <ToggleButton
                 active={isWake}
                 variant="orange"
-                disabled={wakeDisabled}
-                onClick={() => updateState({ isWake: !isWake })}
+                onClick={() => {
+                  const updates = { isWake: !isWake };
+                  if (!isWake) {
+                    // Turning wake ON — flips can't have wake, switch to spins
+                    if (modifier === "flips") updates.modifier = "spins";
+                  } else {
+                    // Turning wake OFF — lines requires wake, switch to spins
+                    if (modifier === "lines") updates.modifier = "spins";
+                  }
+                  updateState(updates);
+                }}
                 style={wakeHeatStyle}
                 className={isWake ? "!font-bold" : ""}
               >
@@ -513,13 +510,14 @@ export default function Calculator({
               <ToggleButton
                 active={isToe}
                 variant="purple"
-                disabled={modifier === "flips" || toeDisabled}
                 onClick={() => {
                   const updates = { isToe: !isToe };
                   if (!isToe) {
-                    // Turning toe ON
+                    // Turning toe ON — auto-adjust conflicts
+                    if (modifier === "flips") updates.modifier = "spins";
                     if (modifier === "steps") updates.modifier = "spins";
                     if (modifier === "lines") updates.isWake = true;
+                    if (skiCount === 2) updates.skiCount = 1;
                   }
                   updateState(updates);
                 }}
