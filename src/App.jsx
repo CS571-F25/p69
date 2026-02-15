@@ -60,6 +60,13 @@ export default function App() {
         StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
         StatusBar.setBackgroundColor({ color: "#0f172a" }).catch(() => {});
       }).catch(() => {});
+
+      import("@capacitor/app").then(({ App: CapApp }) => {
+        CapApp.addListener("backButton", ({ canGoBack }) => {
+          if (canGoBack) window.history.back();
+          else CapApp.exitApp();
+        });
+      }).catch(() => {});
     }
   }, []);
 

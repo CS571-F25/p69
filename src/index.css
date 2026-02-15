@@ -5,3 +5,9 @@
 html, body {
   overscroll-behavior: none;
 }
+
+button, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

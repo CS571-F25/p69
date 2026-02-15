@@ -1,5 +1,22 @@
 // Utility functions for trick calculations and formatting
 
+import { Capacitor } from "@capacitor/core";
+
+export async function copyToClipboard(text) {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const { Clipboard } = await import("@capacitor/clipboard");
+      await Clipboard.write({ string: text });
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    return true;
+  } catch (e) {
+    console.error("Clipboard write failed:", e);
+    return false;
+  }
+}
+
 export function calculatePassTotal(tricks) {
   return tricks.reduce((sum, trick) => sum + trick.points, 0);
 }

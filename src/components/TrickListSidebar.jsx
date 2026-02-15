@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { calculatePassTotal, formatTrickList } from "../utils/trickUtils.js";
+import { calculatePassTotal, formatTrickList, copyToClipboard } from "../utils/trickUtils.js";
 
 // Compact trick list sidebar for calculator view
 export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCount, pass2SkiCount, recommendations }) {
@@ -9,9 +9,11 @@ export default function TrickListSidebar({ pass1, pass2, currentPass, pass1SkiCo
 
   const handleCopy = async () => {
     const text = formatTrickList(pass1, pass2, pass1SkiCount, pass2SkiCount);
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const hasTricks = pass1.length > 0 || pass2.length > 0;

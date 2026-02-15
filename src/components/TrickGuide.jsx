@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import trickRulesPdf from "../assets/iwwf2025trickrules.pdf";
 import TrickTable from "./TrickTable.jsx";
 
@@ -95,12 +96,21 @@ const flips = [
 ];
 
 export default function TrickGuide() {
+  const handlePdfClick = async (e) => {
+    if (Capacitor.isNativePlatform()) {
+      e.preventDefault();
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: "https://iwwf.sport/wp-content/uploads/2025/04/IWWF-World-Waterski-Rules-2025_20250408.pdf" });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-2 py-4 sm:p-6">
       <h1 className="text-2xl sm:text-4xl font-bold mb-2">Trick Guide</h1>
       <p className="text-gray-400 mb-2 text-xs sm:text-sm">IWWF Waterski Rules 2025</p>
       <a
         href={trickRulesPdf}
+        onClick={handlePdfClick}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="View Full IWWF 2025 Trick Rules PDF (opens in new tab)"

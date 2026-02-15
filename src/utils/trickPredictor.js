@@ -13,15 +13,16 @@ let sessionPromise = null;
 let inferenceInProgress = false;
 let inferenceQueue = [];
 
-// Point to CDN for WASM files (must match installed version 1.21.0)
-ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/";
+// Use local WASM files and single-threaded mode (Capacitor WebViews lack SharedArrayBuffer)
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.wasmPaths = "/";
 
 // Initialize the ONNX session (lazy load with singleton promise)
 function getSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
       // Fetch from public folder - Vite serves public/ at root
-      const modelUrl = "./model/tricks_gru.onnx";
+      const modelUrl = "/model/tricks_gru.onnx";
       console.log("Loading ONNX model from:", modelUrl);
 
       // Fetch the model as ArrayBuffer and create session from it
