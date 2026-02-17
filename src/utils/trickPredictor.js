@@ -1,42 +1,78 @@
 import * as ort from "onnxruntime-web/wasm";
-import stoi from "../model/stoi.json";
-import itos from "../model/itos.json";
 
-const SEQ_LEN = 100;
-const VOCAB_SIZE = 78;
+const SEQ_LEN = 30;
 
-// Singleton pattern: store the PROMISE, not the result
-// This prevents race conditions from React double-renders
-let sessionPromise = null;
+// Skill level → tier directory mapping
+const TIER_MAP = {
+  beginner: "0_1k",
+  intermediate: "1k_2k",
+  advanced: "2k_7k",
+  pro: "7k_plus",
+};
 
-// Mutex to prevent concurrent inference calls
-let inferenceInProgress = false;
-let inferenceQueue = [];
+// Per-tier caches: { sessionPromise, stoi, itos }
+const tierCache = {};
+
+// Mutex to prevent concurrent inference calls per tier
+const inferenceState = {};
 
 // Use local WASM files and single-threaded mode (Capacitor WebViews lack SharedArrayBuffer)
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.wasmPaths = "/";
 
-// Initialize the ONNX session (lazy load with singleton promise)
-function getSession() {
-  if (!sessionPromise) {
-    sessionPromise = (async () => {
-      // Fetch from public folder - Vite serves public/ at root
-      const modelUrl = "/model/tricks_gru.onnx";
+/**
+ * Get or create the ONNX session + vocab for a specific tier
+ */
+function getTierResources(tier) {
+  if (!tierCache[tier]) {
+    tierCache[tier] = (async () => {
+      const basePath = `/model/${tier}`;
+
+      // Fetch stoi and itos vocab files
+      const [stoiRes, itosRes] = await Promise.all([
+        fetch(`${basePath}/stoi.json`),
+        fetch(`${basePath}/itos.json`),
+      ]);
+
+      if (!stoiRes.ok || !itosRes.ok) {
+        throw new Error(`Failed to fetch vocab for tier ${tier}`);
+      }
+
+      const [stoi, itos] = await Promise.all([stoiRes.json(), itosRes.json()]);
+
+      // Fetch ONNX model and its external data file in parallel
+      const modelName = `tricks_gru_${tier}`;
+      const modelUrl = `${basePath}/${modelName}.onnx`;
+      const dataUrl = `${basePath}/${modelName}.onnx.data`;
       console.log("Loading ONNX model from:", modelUrl);
 
-      // Fetch the model as ArrayBuffer and create session from it
-      const response = await fetch(modelUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch model: ${response.status} ${response.statusText}`);
+      const [modelRes, dataRes] = await Promise.all([
+        fetch(modelUrl),
+        fetch(dataUrl),
+      ]);
+      if (!modelRes.ok) {
+        throw new Error(`Failed to fetch model: ${modelRes.status} ${modelRes.statusText}`);
       }
-      const modelBuffer = await response.arrayBuffer();
-      const session = await ort.InferenceSession.create(modelBuffer);
-      console.log("ONNX session created successfully");
-      return session;
+      if (!dataRes.ok) {
+        throw new Error(`Failed to fetch model data: ${dataRes.status} ${dataRes.statusText}`);
+      }
+
+      const [modelBuffer, dataBuffer] = await Promise.all([
+        modelRes.arrayBuffer(),
+        dataRes.arrayBuffer(),
+      ]);
+
+      const session = await ort.InferenceSession.create(modelBuffer, {
+        externalData: [
+          { path: `${modelName}.onnx.data`, data: dataBuffer },
+        ],
+      });
+      console.log(`ONNX session created for tier: ${tier}`);
+
+      return { session, stoi, itos };
     })();
   }
-  return sessionPromise;
+  return tierCache[tier];
 }
 
 // Apply softmax to convert logits to probabilities
@@ -47,40 +83,31 @@ function softmax(logits) {
   return exps.map((e) => e / sumExps);
 }
 
-// Convert trick abbreviation to model ID
-function trickToId(abbr) {
-  // Strip any modifiers like " (NC)" from the abbreviation
-  const cleanAbbr = abbr.replace(/ \(NC\)$/, "");
-  return stoi[cleanAbbr] ?? null;
-}
-
-// Convert model ID to trick abbreviation
-function idToTrick(id) {
-  return itos[String(id)] ?? null;
-}
-
 /**
  * Run inference with mutex to prevent "Session already started" errors
  * ONNX Runtime doesn't support concurrent run() calls on the same session
  */
-async function runInferenceWithLock(sess, feeds) {
-  // If inference is already running, wait in queue
-  if (inferenceInProgress) {
+async function runInferenceWithLock(tier, sess, feeds) {
+  if (!inferenceState[tier]) {
+    inferenceState[tier] = { inProgress: false, queue: [] };
+  }
+  const state = inferenceState[tier];
+
+  if (state.inProgress) {
     return new Promise((resolve, reject) => {
-      inferenceQueue.push({ feeds, resolve, reject });
+      state.queue.push({ feeds, resolve, reject });
     });
   }
 
-  inferenceInProgress = true;
+  state.inProgress = true;
   try {
     const result = await sess.run(feeds);
     return result;
   } finally {
-    inferenceInProgress = false;
-    // Process next item in queue if any
-    if (inferenceQueue.length > 0) {
-      const next = inferenceQueue.shift();
-      runInferenceWithLock(sess, next.feeds)
+    state.inProgress = false;
+    if (state.queue.length > 0) {
+      const next = state.queue.shift();
+      runInferenceWithLock(tier, sess, next.feeds)
         .then(next.resolve)
         .catch(next.reject);
     }
@@ -90,15 +117,20 @@ async function runInferenceWithLock(sess, feeds) {
 /**
  * Predict the next tricks based on current trick history
  * @param {Array<{abbr: string}>} trickHistory - Array of tricks performed
+ * @param {string} skillLevel - One of "beginner", "intermediate", "advanced", "pro"
  * @returns {Promise<Array<{abbr: string, probability: number}>>} - Top predictions with probabilities
  */
-export async function predictNextTricks(trickHistory) {
+export async function predictNextTricks(trickHistory, skillLevel = "beginner") {
   try {
-    const sess = await getSession();
+    const tier = TIER_MAP[skillLevel] || TIER_MAP.beginner;
+    const { session, stoi, itos } = await getTierResources(tier);
 
-    // Convert trick history to IDs
+    // Convert trick history to IDs using tier-specific vocab
     const ids = trickHistory
-      .map((t) => trickToId(t.abbr))
+      .map((t) => {
+        const cleanAbbr = t.abbr.replace(/ \(NC\)$/, "");
+        return stoi[cleanAbbr] ?? null;
+      })
       .filter((id) => id !== null);
 
     // Pad sequence to SEQ_LEN (left-pad with zeros)
@@ -116,7 +148,7 @@ export async function predictNextTricks(trickHistory) {
     );
 
     // Run inference with lock to prevent concurrent calls
-    const results = await runInferenceWithLock(sess, { input_ids: inputTensor });
+    const results = await runInferenceWithLock(tier, session, { input_ids: inputTensor });
     const logits = Array.from(results.logits.data);
 
     // Apply softmax
@@ -125,7 +157,7 @@ export async function predictNextTricks(trickHistory) {
     // Create predictions array with trick names and probabilities
     const predictions = probabilities
       .map((prob, idx) => ({
-        abbr: idToTrick(idx),
+        abbr: itos[String(idx)] ?? null,
         probability: prob,
       }))
       .filter((p) => p.abbr !== null && p.abbr !== "END" && p.abbr !== "FALL")
@@ -199,11 +231,8 @@ export function filterLegalPredictions(
     heatmap.set(pred.abbr, pred.rank);
   });
 
-  // Only suggest tricks that haven't been performed yet
-  const unperformed = filtered.filter((pred) => !pred.alreadyPerformed);
-
   return {
-    top5: unperformed.slice(0, 5),
+    top5: filtered.slice(0, 5),
     heatmap,
     totalFiltered: filtered.length,
   };
