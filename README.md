@@ -6,6 +6,18 @@ A real-time trick water skiing calculator for competitive athletes, built with R
 
 ---
 
+## Background & Motivation
+
+Competitive trick water skiing is a sport where athletes perform spins and tricks on a smooth, finless ski within a 20-second window, combining unique tricks to maximize their point total. Tournament runs are currently scored by human judges watching live — a system that is old, inconsistent, and prone to error.
+
+**For athletes**, calculating a trick run means cross-referencing a points guide and doing mental math on the fly. It's easy to miscalculate, forget a modifier bonus, or misjudge whether a combination is even legal under IWWF rules. Planning and optimizing a run before a tournament is tedious and often done on paper or in your head.
+
+**For judges**, the problem is even more acute. Most are still using pen and paper — physically writing down each trick as they call it, or recording themselves and transcribing the audio after the fact. This introduces delays, handwriting errors, missed tricks, and inconsistencies between judges scoring the same run.
+
+This calculator is designed to make scoring as seamless and error-free as possible for both athletes and judges. Just tap the tricks as you see them — point totals, duplicate detection, and legal-move enforcement are all handled automatically. And with our AI-powered trick suggestions achieving a **95% hit rate in the top 5 displayed**, you can score a run quickly by simply tapping an AI suggestion without ever needing to navigate the full trick grid.
+
+---
+
 ## Features
 
 - **Real-time point calculation** as you build your pass
