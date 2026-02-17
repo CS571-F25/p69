@@ -1,7 +1,5 @@
 # Trick Ski Calculator
 
-A real-time trick water skiing calculator for competitive athletes, built with React and Tailwind CSS. Based on official IWWF 2025 rules.
-
 **Developed by Jake Artang & Calvin DeBellis**
 
 ---
