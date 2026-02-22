@@ -106,15 +106,15 @@ export default function TrickGuide() {
 
   return (
     <div className="max-w-7xl mx-auto px-2 py-4 sm:p-6">
-      <h1 className="text-2xl sm:text-4xl font-bold mb-2">Trick Guide</h1>
-      <p className="text-gray-400 mb-2 text-xs sm:text-sm">IWWF Waterski Rules 2025</p>
+      <h1 className="text-2xl sm:text-4xl font-bold mb-2 text-white">Trick Guide</h1>
+      <p className="text-white font-semibold mb-2 text-sm sm:text-base">IWWF Waterski Rules 2025</p>
       <a
         href={trickRulesPdf}
         onClick={handlePdfClick}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="View Full IWWF 2025 Trick Rules PDF (opens in new tab)"
-        className="inline-block mb-4 sm:mb-6 bg-blue-900 hover:bg-blue-700 text-gray-100 font-light text-xs sm:text-sm tracking-wide px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 border border-blue-800 hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
+        className="inline-block mb-4 sm:mb-6 bg-blue-900 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base tracking-wide px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 border border-blue-800 hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
       >
         View Full IWWF 2025 Trick Rules PDF
       </a>
@@ -125,12 +125,12 @@ export default function TrickGuide() {
 
       {/* Notes */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
-        <p className="text-gray-300 text-xs sm:text-sm">
-          <span className="font-medium text-blue-400">*</span> The Flip with a 540 degrees rotation or more must be done hand-to-hand. The rope may not be wrapped around the body to assist the turn. This does not prohibit the simple back position wrap where the rope does not go around the body.
+        <p className="text-white font-medium text-sm sm:text-base">
+          <span className="font-bold text-blue-400">*</span> The Flip with a 540 degrees rotation or more must be done hand-to-hand. The rope may not be wrapped around the body to assist the turn. This does not prohibit the simple back position wrap where the rope does not go around the body.
         </p>
         <div className="border-t border-slate-700 pt-2 sm:pt-3">
-          <p className="text-gray-400 text-xs sm:text-sm font-medium mb-2">When calling trick runs, the following substitutions will be allowed:</p>
-          <ul className="text-gray-400 text-xs space-y-1 ml-3 sm:ml-4">
+          <p className="text-white font-semibold text-sm sm:text-base mb-2">When calling trick runs, the following substitutions will be allowed:</p>
+          <ul className="text-white font-medium text-sm space-y-1 ml-3 sm:ml-4">
             <li>a) A reverse turn may be indicated by the letter "R" alone</li>
             <li>b) SS may be used for S in trick numbers 1 & 2</li>
             <li>c) OB may be used for BB in all tricks where it is normally used (#5b, 11, 17, 26, 32, 40, 48)</li>

@@ -1,4 +1,3 @@
-// Reusable stats display card component
 export default function StatsCard({ label, value, variant = "primary", size = "large" }) {
   const variantColors = {
     primary: "text-blue-400",
@@ -13,16 +12,16 @@ export default function StatsCard({ label, value, variant = "primary", size = "l
   if (size === "small") {
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-gray-400 text-[10px] sm:text-xs">{label}:</span>
-        <span className={`text-sm sm:text-base font-medium ${variantColors[variant]}`}>{value}</span>
+        <span className="text-white font-semibold text-xs sm:text-sm">{label}:</span>
+        <span className={`text-base sm:text-lg font-bold ${variantColors[variant]}`}>{value}</span>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="text-gray-400 text-xs sm:text-sm mb-1">{label}</div>
-      <div className={`${sizeStyles[size]} font-light tracking-wider ${variantColors[variant]}`}>
+      <div className="text-white font-semibold text-sm sm:text-base mb-1">{label}</div>
+      <div className={`${sizeStyles[size]} font-semibold tracking-wider ${variantColors[variant]}`}>
         {value}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import TrickButton, { getHeatmapStyle } from "./TrickButton.jsx";
 import ToggleButton from "./ToggleButton.jsx";
 import StatsCard from "./StatsCard.jsx";
@@ -34,13 +35,13 @@ export default function Calculator({
   onAddCustomTrick,
   onRemoveCustomTrick,
   onUpdateCustomTrick,
+  showSetup,
+  setShowSetup,
 }) {
   const { orientation, skiCount, lastReversibleTrick, secondLastReversibleTrick, modifier, isWake, isToe, noCredit, passStarted } = calcState;
 
   // Heatmap state - only updated when predictions change
   const [heatmapData, setHeatmapData] = useState({ map: new Map(), total: 0 });
-
-  const [showSkillInfo, setShowSkillInfo] = useState(false);
 
   // Custom trick form state
   const [showCustomForm, setShowCustomForm] = useState(false);
@@ -175,20 +176,20 @@ export default function Calculator({
 
   const handleModifierChange = (newModifier) => {
     const updates = { modifier: newModifier };
-    // Auto-disable wake/toe for invalid combinations
+    // When leaving lines, undo its auto-managed wake state
+    if (modifier === "lines" && newModifier !== "lines") {
+      updates.isWake = false;
+    }
     if (newModifier === "flips") {
       updates.isWake = false;
       updates.isToe = false;
     }
     if (newModifier === "lines") {
       updates.isWake = false;
-      // Toe lines are all wake tricks
       if (isToe) updates.isWake = true;
     }
     if (newModifier === "steps" && isToe) {
-      // Steps not available for toe, switch won't happen due to disabled state
-      // but guard against it
-      return;
+      updates.isToe = false;
     }
     updateState(updates);
   };
@@ -215,6 +216,20 @@ export default function Calculator({
   const passTotal = calculatePassTotal(trickList);
   const allTotal = calculatePassTotal(allTricks);
 
+  const scoreBox = (
+    <Link to="/trick-pass" className="flex-shrink-0 rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5 block">
+      <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 h-full min-w-[8rem] sm:min-w-[10rem] relative flex flex-col">
+        <div className="pt-1.5 pl-2 sm:pt-2 sm:pl-3 text-white font-semibold text-xs sm:text-sm">Total: <span className="text-green-400 font-bold text-sm sm:text-base">{allTotal}</span></div>
+        <div className="flex-1 flex items-center justify-center text-4xl sm:text-5xl font-semibold tracking-wider text-blue-400">{passTotal}</div>
+        <div className="flex justify-end pb-1 pr-1.5 sm:pb-1.5 sm:pr-2">
+          <svg className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-400 ${allTricks.length > 0 ? "animate-[chevron-pulse_2s_ease-in-out_infinite]" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </div>
+      </div>
+    </Link>
+  );
+
   // Count flips for 6-flip limit warning
   const flipCount = trickList.filter(t => t.abbr.includes("FL")).length;
 
@@ -222,48 +237,43 @@ export default function Calculator({
   const linesDisabled = skiCount === 2;
   const toeDisabled = skiCount === 2;
 
-  const stepsDisabled = isToe;
-
-  // Compute average heatmap style for a set of tricks
-  const getAvgHeatStyle = (tricks) => {
-    if (heatmapData.total === 0 || tricks.length === 0) return {};
-    const ranks = [];
-    for (const trick of tricks) {
-      const rank = heatmapData.map.get(trick.abbr);
-      if (rank !== undefined) ranks.push(rank);
-    }
-    if (ranks.length === 0) return {};
-    const avgRank = ranks.reduce((a, b) => a + b, 0) / ranks.length;
-    return getHeatmapStyle(avgRank, heatmapData.total);
+  const trickDefMap = new Map(allTricksForSki.map(t => [t.abbr, t]));
+  const ranked = [...heatmapData.map.entries()]
+    .sort(([, a], [, b]) => a - b)
+    .slice(0, 5);
+  const modWeights = { spins: 0, steps: 0, lines: 0, flips: 0 };
+  let wakeWeight = 0, toeWeight = 0;
+  const N = ranked.length;
+  let maxWeight = 0;
+  for (let i = 0; i < N; i++) {
+    const t = trickDefMap.get(ranked[i][0]);
+    if (!t) continue;
+    const w = Math.pow(2, N - 1 - i);
+    maxWeight += w;
+    modWeights[t.modifier] = (modWeights[t.modifier] || 0) + w;
+    if (t.isWake) wakeWeight += w;
+    if (t.isToe) toeWeight += w;
+  }
+  const MAX_WEIGHT = maxWeight || 1;
+  const weightToHeat = (weight) => {
+    if (heatmapData.total === 0 || N === 0) return {};
+    const score = Math.pow(weight / MAX_WEIGHT, 0.25);
+    const steps = MAX_WEIGHT;
+    return getHeatmapStyle(Math.round((1 - score) * steps), steps);
   };
 
-  // Compute heat for each modifier tab (simulate auto-adjustments from handleModifierChange)
-  const getModifierHeat = (modKey) => {
-    let simWake = isWake, simToe = isToe;
-    if (modKey === "flips") { simWake = false; simToe = false; }
-    if (modKey === "lines") { simWake = isToe ? true : false; }
-    return getAvgHeatStyle(getTricks(skiCount, modKey, simWake, simToe, customTricks));
-  };
+  const getModifierHeat = (modKey) => weightToHeat(modWeights[modKey] || 0);
 
-  // Heat for Wake button: heat of wake tricks for current modifier/toe
-  const wakeDisabled = modifier === "flips" || (modifier === "lines" && !isToe);
-  const wakeHeatStyle = !wakeDisabled
-    ? getAvgHeatStyle(getTricks(skiCount, modifier, true, isToe, customTricks))
-    : {};
+  const wakeDisabled = modifier === "flips" || modifier === "lines";
+  const wakeHeatStyle = !wakeDisabled ? weightToHeat(wakeWeight) : {};
 
-  // Heat for Toe button: heat of toe tricks (simulate side-effects of toggling toe on)
-  const toeHeatStyle = !toeDisabled && modifier !== "flips"
-    ? (() => {
-        let simMod = modifier, simWake = isWake;
-        if (modifier === "steps") simMod = "spins";
-        if (modifier === "lines") simWake = true;
-        return getAvgHeatStyle(getTricks(skiCount, simMod, simWake, true, customTricks));
-      })()
+  const toeHeatStyle = !(toeDisabled || modifier === "flips" || modifier === "steps")
+    ? weightToHeat(toeWeight)
     : {};
 
   const modifiers = [
     { key: "spins", label: "Spins", disabled: false },
-    { key: "steps", label: "Steps", disabled: stepsDisabled },
+    { key: "steps", label: "Steps", disabled: false },
     { key: "lines", label: "Lines", disabled: linesDisabled },
     { key: "flips", label: "Flips", disabled: false },
   ];
@@ -274,377 +284,317 @@ export default function Calculator({
       <div className="flex gap-6">
         {/* Main Calculator Section */}
         <div className="flex-1 min-w-0">
-          {/* Score + Config Row */}
-          {!passStarted ? (
-            <div className="flex gap-2 mb-4 sm:mb-6">
-              {/* Score Box */}
-              <div className="flex-shrink-0 w-[28%] sm:w-[25%] rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5">
-                <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 p-3 sm:p-4 flex flex-col justify-center h-full">
-                  {currentPass === 2 && (
-                    <div className="mb-1">
-                      <StatsCard label="Both Passes" value={allTotal} variant="secondary" size="small" />
-                    </div>
-                  )}
-                  <StatsCard label={`Pass ${currentPass} Points`} value={passTotal} variant="primary" size="large" />
+          {showSetup ? (
+            <>
+              {/* Score Box + Pass indicator row */}
+              <div className="flex items-stretch gap-3 sm:gap-6 mb-3">
+                {scoreBox}
+                <div className="flex flex-col items-end gap-2 ml-auto">
+                  <div className="flex gap-2">
+                    <button disabled className="px-5 py-2.5 sm:px-6 sm:py-3 text-base sm:text-lg font-semibold rounded-lg border bg-slate-900 text-white border-slate-800 cursor-not-allowed">Undo</button>
+                    <button disabled className="px-5 py-2.5 sm:px-6 sm:py-3 text-base sm:text-lg font-semibold rounded-lg border bg-slate-900 text-white border-slate-800 cursor-not-allowed">Clear</button>
+                  </div>
+                  <div className="text-base sm:text-lg text-white font-bold">
+                    Pass {currentPass} of 2
+                  </div>
                 </div>
               </div>
 
-              {/* Config Box */}
-              <div className="flex-1 min-w-0 bg-slate-800 rounded-lg p-3 sm:p-4 border border-slate-700 flex flex-col justify-between">
-                {/* Skill Level */}
+              {/* Setup View */}
+              <div className="flex flex-col py-1 sm:py-3">
+                {/* Skill Level — pass 1 only */}
                 {currentPass === 1 && (
-                  <div className="mb-1.5 sm:mb-2">
-                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1 flex items-center gap-1">
-                      <span className="cursor-pointer" onClick={() => setShowSkillInfo(s => !s)}>
-                        Skill Level
+                  <div className="w-full mb-3 sm:mb-5">
+                    <div className="text-sm sm:text-base text-white font-bold mb-2">
+                      Skill Level
+                      <span className="text-xs sm:text-sm text-white font-medium ml-1">
+                        : helps us suggest tricks based off passes at your level
                       </span>
-                      <button
-                        onClick={() => setShowSkillInfo(s => !s)}
-                        className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-gray-500 text-gray-400 hover:text-gray-200 hover:border-gray-300 transition-colors text-[8px] sm:text-[10px] leading-none"
-                        aria-label="About skill level"
-                      >
-                        i
-                      </button>
-                      {showSkillInfo && (
-                        <span
-                          className="text-[7px] sm:text-[10px] text-gray-500 cursor-pointer"
-                          onClick={() => setShowSkillInfo(false)}
-                        >
-                          helps us suggest tricks based off passes at your skill level
-                        </span>
-                      )}
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {SKILL_LEVELS.map((level) => (
                         <ToggleButton
                           key={level.key}
                           active={skillLevel === level.key}
                           onClick={() => onSkillLevelChange(level.key)}
-                          className="!py-0.5 !text-[7px] sm:!text-sm !px-0.5 !leading-tight"
+                          className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
                         >
                           <div>{level.label}</div>
-                          <div className="text-[8px] sm:text-[10px] opacity-60 font-normal">{level.range}</div>
+                          <div className="text-sm sm:text-base text-white font-medium">{level.range}</div>
                         </ToggleButton>
                       ))}
                     </div>
                   </div>
                 )}
-                {/* Position + Skis */}
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1">Position</div>
-                    <div className="flex gap-2">
-                      <ToggleButton
-                        active={orientation === "front"}
-                        onClick={() => updateState({ orientation: "front" })}
-                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
-                      >
-                        Front
-                      </ToggleButton>
-                      <ToggleButton
-                        active={orientation === "back"}
-                        onClick={() => updateState({ orientation: "back" })}
-                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
-                      >
-                        Back
-                      </ToggleButton>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[10px] sm:text-xs text-gray-400 mb-1">Skis</div>
-                    <div className="flex gap-2">
-                      <ToggleButton
-                        active={skiCount === 1}
-                        onClick={() => updateState({ skiCount: 1 })}
-                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
-                      >
-                        1 Ski
-                      </ToggleButton>
-                      <ToggleButton
-                        active={skiCount === 2}
-                        onClick={() => updateState({ skiCount: 2 })}
-                        className="flex-1 !py-0.5 !text-[10px] sm:!text-sm"
-                      >
-                        2 Skis
-                      </ToggleButton>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Compact Status - score + info in a row */
-            <div className="flex items-end gap-6 sm:gap-10 mb-4 sm:mb-6">
-              {/* Score Box - expands to fill */}
-              <div className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5">
-                <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 p-3 sm:p-4 flex flex-col justify-center">
-                  {currentPass === 2 && (
-                    <div className="mb-1">
-                      <StatsCard label="Both Passes" value={allTotal} variant="secondary" size="small" />
-                    </div>
-                  )}
-                  <StatsCard label={`Pass ${currentPass} Points`} value={passTotal} variant="primary" size="large" />
-                </div>
-              </div>
 
-              {/* Compact info — two rows on mobile, one row on desktop */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-1.5 sm:gap-0.5">
-                <div className="flex flex-wrap justify-end gap-x-3 sm:gap-x-5">
-                  <div>
-                    <span className="text-[10px] sm:text-xs text-gray-400">Position: </span>
-                    <span className="text-xs sm:text-sm font-medium text-blue-400 capitalize">{orientation}</span>
+                {/* Starting Position */}
+                <div className="w-full mb-3 sm:mb-5">
+                  <div className="text-sm sm:text-base text-white font-bold mb-2">Starting Position</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleButton
+                      active={orientation === "front"}
+                      onClick={() => updateState({ orientation: "front" })}
+                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                    >
+                      Front
+                    </ToggleButton>
+                    <ToggleButton
+                      active={orientation === "back"}
+                      onClick={() => updateState({ orientation: "back" })}
+                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                    >
+                      Back
+                    </ToggleButton>
                   </div>
-                  <div>
-                    <span className="text-[10px] sm:text-xs text-gray-400">Skis: </span>
-                    <span className="text-xs sm:text-sm font-medium text-blue-400">{skiCount}</span>
+                </div>
+
+                {/* Skis */}
+                <div className="w-full mb-3 sm:mb-6">
+                  <div className="text-sm sm:text-base text-white font-bold mb-2">Skis</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleButton
+                      active={skiCount === 1}
+                      onClick={() => updateState({ skiCount: 1 })}
+                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                    >
+                      1 Ski
+                    </ToggleButton>
+                    <ToggleButton
+                      active={skiCount === 2}
+                      onClick={() => updateState({ skiCount: 2 })}
+                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                    >
+                      2 Skis
+                    </ToggleButton>
                   </div>
-                  <div>
-                    <span className="text-[10px] sm:text-xs text-gray-400">Level: </span>
-                    <span className="text-xs sm:text-sm font-medium text-blue-400 capitalize">{skillLevel}</span>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs text-gray-400">Pass {currentPass} of 2</span>
-                    {currentPass === 1 && (
-                      <ToggleButton
-                        active={true}
-                        variant="green"
-                        onClick={startSecondPass}
-                        ariaLabel="Start second pass"
-                        className="!py-1 !text-xs"
+                </div>
+
+                {/* Start Button */}
+                <button
+                  onClick={() => setShowSetup(false)}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xl sm:text-2xl font-bold tracking-wider transition-all shadow-lg shadow-blue-900/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                >
+                  Start
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Compact Status Row — score + info */}
+              <div className="flex items-stretch gap-3 sm:gap-6 mb-4 sm:mb-6">
+                {scoreBox}
+                <div className="flex-1 min-w-0 flex flex-col items-end justify-between">
+                  {/* Undo + Clear */}
+                  <div className="flex gap-2 w-full mb-2">
+                    <button
+                      onClick={handleUndo}
+                      disabled={calcStateHistory.length === 0}
+                      aria-label="Undo last trick"
+                      className={`flex-1 px-2 py-3.5 sm:py-4 ${currentPass === 2 ? "text-base" : "text-lg"} sm:text-xl font-semibold rounded-lg border whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+                        calcStateHistory.length === 0
+                          ? "bg-slate-900 text-white border-slate-800 cursor-not-allowed"
+                          : "bg-amber-900 hover:bg-amber-700 text-white border-amber-800 hover:border-amber-600"
+                      }`}
+                    >
+                      Undo
+                    </button>
+                    {currentPass === 2 ? (
+                      <>
+                        <button
+                          onClick={clearCurrentPass}
+                          aria-label="Clear current pass"
+                          className="flex-1 px-2 py-3.5 sm:py-4 text-sm sm:text-base font-semibold rounded-lg leading-tight bg-red-900 hover:bg-red-700 text-white border border-red-800 hover:border-red-600 focus:outline-none"
+                        >
+                          Clear Pass
+                        </button>
+                        <button
+                          onClick={clearAll}
+                          aria-label="Clear all passes"
+                          className="flex-1 px-2 py-3.5 sm:py-4 text-sm sm:text-base font-semibold rounded-lg leading-tight bg-red-950 hover:bg-red-900 text-white border border-red-900 hover:border-red-700 focus:outline-none"
+                        >
+                          Clear All
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={clearAll}
+                        aria-label="Clear all tricks"
+                        className="flex-1 px-2 py-3.5 sm:py-4 text-lg sm:text-xl font-semibold rounded-lg bg-red-900 hover:bg-red-700 text-white border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
                       >
-                        Start Pass 2
-                      </ToggleButton>
+                        Clear
+                      </button>
                     )}
                   </div>
-                </div>
-                <div className="flex sm:hidden items-center gap-2">
-                  <span className="text-[10px] text-gray-400">Pass {currentPass} of 2</span>
-                  {currentPass === 1 && (
-                    <ToggleButton
-                      active={true}
-                      variant="green"
-                      onClick={startSecondPass}
-                      ariaLabel="Start second pass"
-                      className="!py-1 !text-xs"
-                    >
-                      Start Pass 2
-                    </ToggleButton>
-                  )}
+                  {/* Info */}
+                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-1">
+                    <div className="flex gap-x-2 sm:gap-x-3 whitespace-nowrap">
+                      <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
+                      <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
+                      <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
+                    </div>
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <span className="text-xs sm:text-sm text-white font-semibold">Pass {currentPass} of 2</span>
+                      {currentPass === 1 && (
+                        <ToggleButton
+                          active={true}
+                          variant="green"
+                          onClick={startSecondPass}
+                          ariaLabel="Start second pass"
+                          className="!py-1 !text-xs"
+                        >
+                          Start Pass 2
+                        </ToggleButton>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* AI Suggestions */}
+              <div className="mb-4 sm:mb-6">
+                <TrickRecommendations
+                  trickHistory={allTricks}
+                  currentOrientation={orientation}
+                  allPerformedTricks={allTricks}
+                  availableTricks={allTricksForSki}
+                  availableReverseAbbrs={availableReverseAbbrs}
+                  onTrickClick={(abbr) => {
+                    const trick = allTricksForSki.find((t) => t.abbr === abbr);
+                    if (trick && trick.startPos === orientation) {
+                      handleModifierChange(trick.modifier);
+                      updateState({ isWake: !!trick.isWake, isToe: !!trick.isToe });
+                      handleTrickClick(trick);
+                    }
+                  }}
+                  onHeatmapUpdate={handleHeatmapUpdate}
+                  skillLevel={skillLevel}
+                />
+              </div>
+
+              {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
+              <div className="flex gap-2.5 sm:gap-4 mb-4 sm:mb-6">
+                {/* Category Modifier Buttons (left) */}
+                <div className="flex flex-col gap-1.5 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
+                  {modifiers.map((mod) => {
+                    const isActive = modifier === mod.key;
+                    return (
+                      <ToggleButton
+                        key={mod.key}
+                        active={isActive}
+                        disabled={mod.disabled}
+                        onClick={() => !mod.disabled && handleModifierChange(mod.key)}
+                        style={!mod.disabled ? getModifierHeat(mod.key) : {}}
+                        className={isActive ? "!font-bold" : ""}
+                      >
+                        {mod.label}
+                      </ToggleButton>
+                    );
+                  })}
+                </div>
+
+                {/* Trick Buttons Grid (center) */}
+                <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4">
+                  {tricks.map((trick) => {
+                    const isAvailable = trick.startPos === orientation;
+                    const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
+                    const heatRank = heatmapData.map.get(trick.abbr);
+                    const displayPoints = noCredit ? 0 : trick.points;
+                    return (
+                      <TrickButton
+                        key={trick.isCustom ? trick.id : trick.abbr}
+                        abbr={trick.abbr}
+                        points={displayPoints}
+                        onClick={() => handleTrickClick(trick)}
+                        disabled={!isAvailable}
+                        alreadyPerformed={alreadyPerformed}
+                        heatRank={heatRank}
+                        heatTotal={heatmapData.total}
+                        isCustom={trick.isCustom}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Wake/Toe/NC Modifier Buttons (right) */}
+                <div className="flex flex-col gap-1.5 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
+                  <ToggleButton
+                    active={isWake}
+                    variant="orange"
+                    disabled={wakeDisabled}
+                    onClick={() => updateState({ isWake: !isWake })}
+                    style={wakeHeatStyle}
+                    className={isWake ? "!font-bold" : ""}
+                  >
+                    Wake
+                  </ToggleButton>
+                  <ToggleButton
+                    active={isToe}
+                    variant="purple"
+                    disabled={modifier === "flips" || modifier === "steps" || toeDisabled}
+                    onClick={() => {
+                      const updates = { isToe: !isToe };
+                      if (!isToe) {
+                        if (modifier === "lines") updates.isWake = true;
+                      } else {
+                        if (modifier === "lines") updates.isWake = false;
+                      }
+                      updateState(updates);
+                    }}
+                    style={toeHeatStyle}
+                    className={isToe ? "!font-bold" : ""}
+                  >
+                    Toe
+                  </ToggleButton>
+                  <ToggleButton
+                    active={noCredit}
+                    variant="yellow"
+                    onClick={() => updateState({ noCredit: !noCredit })}
+                    className={noCredit ? "!font-bold" : ""}
+                  >
+                    NC
+                  </ToggleButton>
+
+                  {/* Reverse Button */}
+                  {(() => {
+                    const trickToReverse = canReverseLastTrick ? lastReversibleTrick : canReverseSecondLastTrick ? secondLastReversibleTrick : null;
+                    if (trickToReverse) {
+                      const heatStyle = getHeatmapStyle(heatmapData.map.get("R" + trickToReverse.abbr) ?? heatmapData.total - 1, Math.max(heatmapData.total, 1));
+                      return (
+                        <button
+                          onClick={() => handleReverse(trickToReverse)}
+                          aria-label={`Reverse ${trickToReverse.abbr}, ${trickToReverse.points} points`}
+                          style={{
+                            "--rev-color": heatStyle.backgroundColor,
+                            animation: "rev-pulse 1.5s ease-in-out infinite",
+                            borderColor: heatStyle.borderColor,
+                            containerType: "inline-size",
+                          }}
+                          className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-slate-900"
+                        >
+                          <div className="font-bold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>R{trickToReverse.abbr}</div>
+                          <div className="text-[10px] sm:text-xs font-semibold text-white mt-0.5">{trickToReverse.points} pts</div>
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        disabled
+                        aria-label="Reverse trick, unavailable"
+                        className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30"
+                        style={{ containerType: "inline-size" }}
+                      >
+                        <div className="font-semibold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(3, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>REV</div>
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
+
+            </>
           )}
 
-          {/* AI Suggestions */}
-          <div className="mb-4 sm:mb-6">
-            <TrickRecommendations
-              trickHistory={allTricks}
-              currentOrientation={orientation}
-              allPerformedTricks={allTricks}
-              availableTricks={allTricksForSki}
-              availableReverseAbbrs={availableReverseAbbrs}
-              onTrickClick={(abbr) => {
-                const trick = allTricksForSki.find((t) => t.abbr === abbr);
-                if (trick && trick.startPos === orientation) {
-                  handleTrickClick(trick);
-                }
-              }}
-              onHeatmapUpdate={handleHeatmapUpdate}
-              skillLevel={skillLevel}
-            />
-          </div>
-
-          {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
-          <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
-            {/* Category Modifier Buttons (left) */}
-            <div className="flex flex-col gap-1 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
-              {modifiers.map((mod) => {
-                const isActive = modifier === mod.key;
-                return (
-                  <ToggleButton
-                    key={mod.key}
-                    active={isActive}
-                    disabled={mod.disabled}
-                    onClick={() => !mod.disabled && handleModifierChange(mod.key)}
-                    style={!mod.disabled ? getModifierHeat(mod.key) : {}}
-                    className={isActive ? "!font-bold" : ""}
-                  >
-                    {mod.label}
-                  </ToggleButton>
-                );
-              })}
-            </div>
-
-            {/* Trick Buttons Grid (center) */}
-            <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-4">
-              {tricks.map((trick) => {
-                const isAvailable = trick.startPos === orientation;
-                const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
-                const heatRank = heatmapData.map.get(trick.abbr);
-                const displayPoints = noCredit ? 0 : trick.points;
-                return (
-                  <TrickButton
-                    key={trick.isCustom ? trick.id : trick.abbr}
-                    abbr={trick.abbr}
-                    points={displayPoints}
-                    onClick={() => handleTrickClick(trick)}
-                    disabled={!isAvailable}
-                    alreadyPerformed={alreadyPerformed}
-                    heatRank={heatRank}
-                    heatTotal={heatmapData.total}
-                    isCustom={trick.isCustom}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Wake/Toe/NC Modifier Buttons (right) */}
-            <div className="flex flex-col gap-1 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
-              <ToggleButton
-                active={isWake}
-                variant="orange"
-                disabled={wakeDisabled}
-                onClick={() => updateState({ isWake: !isWake })}
-                style={wakeHeatStyle}
-                className={isWake ? "!font-bold" : ""}
-              >
-                Wake
-              </ToggleButton>
-              <ToggleButton
-                active={isToe}
-                variant="purple"
-                disabled={modifier === "flips" || toeDisabled}
-                onClick={() => {
-                  const updates = { isToe: !isToe };
-                  if (!isToe) {
-                    // Turning toe ON
-                    if (modifier === "steps") updates.modifier = "spins";
-                    if (modifier === "lines") updates.isWake = true;
-                  }
-                  updateState(updates);
-                }}
-                style={toeHeatStyle}
-                className={isToe ? "!font-bold" : ""}
-              >
-                Toe
-              </ToggleButton>
-              <ToggleButton
-                active={noCredit}
-                variant="yellow"
-                onClick={() => updateState({ noCredit: !noCredit })}
-                className={noCredit ? "!font-bold" : ""}
-              >
-                NC
-              </ToggleButton>
-            </div>
-          </div>
-
-          {/* REV, Undo, and Clear Buttons */}
-          <div className="flex flex-wrap gap-2 sm:gap-4">
-            {/* Show second-last reverse if available */}
-            {canReverseSecondLastTrick && (() => {
-              const revAbbr = "R" + secondLastReversibleTrick.abbr;
-              const heatRank = heatmapData.map.get(revAbbr);
-              const heatStyle = heatRank !== undefined ? getHeatmapStyle(heatRank, heatmapData.total) : {};
-              const hasHeat = heatRank !== undefined && heatmapData.total > 0;
-              return (
-                <button
-                  onClick={() => handleReverse(secondLastReversibleTrick)}
-                  aria-label={`Reverse ${secondLastReversibleTrick.abbr}, ${secondLastReversibleTrick.points} points`}
-                  style={hasHeat ? heatStyle : {}}
-                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
-                    hasHeat
-                      ? "text-white hover:opacity-90 hover:shadow-md"
-                      : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
-                  }`}
-                >
-                  <div className="text-sm sm:text-base">R{secondLastReversibleTrick.abbr}</div>
-                  <div className={`text-xs sm:text-sm ${hasHeat ? "text-white/80" : "text-gray-300"}`}>{secondLastReversibleTrick.points} pts</div>
-                </button>
-              );
-            })()}
-
-            {/* Show last reverse if available */}
-            {canReverseLastTrick && (() => {
-              const revAbbr = "R" + lastReversibleTrick.abbr;
-              const heatRank = heatmapData.map.get(revAbbr);
-              const heatStyle = heatRank !== undefined ? getHeatmapStyle(heatRank, heatmapData.total) : {};
-              const hasHeat = heatRank !== undefined && heatmapData.total > 0;
-              return (
-                <button
-                  onClick={() => handleReverse(lastReversibleTrick)}
-                  aria-label={`Reverse ${lastReversibleTrick.abbr}, ${lastReversibleTrick.points} points`}
-                  style={hasHeat ? heatStyle : {}}
-                  className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
-                    hasHeat
-                      ? "text-white hover:opacity-90 hover:shadow-md"
-                      : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
-                  }`}
-                >
-                  <div className="text-sm sm:text-base">R{lastReversibleTrick.abbr}</div>
-                  <div className={`text-xs sm:text-sm ${hasHeat ? "text-white/80" : "text-gray-300"}`}>{lastReversibleTrick.points} pts</div>
-                </button>
-              );
-            })()}
-
-            {/* Disabled REV button when none available */}
-            {!canReverseSecondLastTrick && !canReverseLastTrick && (
-              <button
-                disabled
-                aria-label="Reverse trick, unavailable"
-                className="flex-1 min-w-[60px] bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border"
-              >
-                <div className="text-sm sm:text-base">REV</div>
-                <div className="text-xs sm:text-sm">&nbsp;</div>
-              </button>
-            )}
-
-            {/* Undo button */}
-            <button
-              onClick={handleUndo}
-              disabled={calcStateHistory.length === 0}
-              aria-label="Undo last trick"
-              className={`flex-1 min-w-[60px] font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
-                calcStateHistory.length === 0
-                  ? "bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50"
-                  : "bg-amber-900 hover:bg-amber-700 text-gray-100 border-amber-800 hover:border-amber-600"
-              }`}
-            >
-              <div className="text-sm sm:text-base">Undo</div>
-            </button>
-
-            {/* Clear buttons - show two options on pass 2 */}
-            {currentPass === 2 ? (
-              <>
-                <button
-                  onClick={clearCurrentPass}
-                  aria-label="Clear current pass"
-                  className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
-                >
-                  <span className="hidden sm:inline">Clear Pass</span>
-                  <span className="sm:hidden">Clear<br/>Pass</span>
-                </button>
-                <button
-                  onClick={clearAll}
-                  aria-label="Clear all passes"
-                  className="flex-1 min-w-[60px] bg-red-950 hover:bg-red-900 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-900 hover:border-red-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
-                >
-                  <span className="hidden sm:inline">Clear All</span>
-                  <span className="sm:hidden">Clear<br/>All</span>
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={clearAll}
-                aria-label="Clear all tricks"
-                className="flex-1 min-w-[60px] bg-red-900 hover:bg-red-700 text-gray-100 font-light text-sm sm:text-lg tracking-wide py-2 sm:py-4 rounded-lg transition-all duration-200 border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* Custom Trick */}
+          {/* Custom Trick — only shown when not in setup */}
+          {!showSetup && (<>
           <button
             onClick={() => {
               setEditingTrickId(null);
@@ -661,7 +611,7 @@ export default function Calculator({
               });
               setShowCustomForm(!showCustomForm);
             }}
-            className="mt-3 sm:mt-4 w-full py-2 sm:py-3 rounded-lg border-2 border-dashed border-slate-600 text-gray-400 hover:border-slate-500 hover:text-gray-300 transition-all text-sm sm:text-base"
+            className="mt-3 sm:mt-4 w-full py-2 sm:py-3 rounded-lg border-2 border-dashed border-slate-600 text-white hover:border-slate-500 hover:text-white transition-all text-sm sm:text-base font-semibold"
           >
             {showCustomForm ? "Cancel" : "+ Custom Tricks"}
           </button>
@@ -670,46 +620,46 @@ export default function Calculator({
             <div className="mt-2 p-3 sm:p-4 bg-slate-800 rounded-lg border border-slate-700">
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-gray-400 block mb-1">Name</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Name</label>
                   <input
                     type="text"
                     value={customForm.description}
                     onChange={(e) => setCustomForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="Front Flip 540 Back Landing"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Abbreviation</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Abbreviation</label>
                   <input
                     type="text"
                     value={customForm.abbr}
                     onChange={(e) => setCustomForm(f => ({ ...f, abbr: e.target.value.toUpperCase() }))}
                     placeholder="e.g. FFL5LB"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Points</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Points</label>
                   <input
                     type="number"
                     value={customForm.points}
                     onChange={(e) => setCustomForm(f => ({ ...f, points: e.target.value }))}
                     placeholder="0"
                     min="0"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Start Position</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Start Position</label>
                   <div className="flex gap-1">
                     <ToggleButton active={customForm.startPos === "front"} onClick={() => setCustomForm(f => ({ ...f, startPos: "front" }))} className="flex-1 !py-1.5">Front</ToggleButton>
                     <ToggleButton active={customForm.startPos === "back"} onClick={() => setCustomForm(f => ({ ...f, startPos: "back" }))} className="flex-1 !py-1.5">Back</ToggleButton>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">End Position</label>
+                  <label className="text-xs text-white font-semibold block mb-1">End Position</label>
                   <div className="flex gap-1">
                     <ToggleButton active={customForm.endPos === "front"} onClick={() => setCustomForm(f => ({ ...f, endPos: "front" }))} className="flex-1 !py-1.5">Front</ToggleButton>
                     <ToggleButton active={customForm.endPos === "back"} onClick={() => setCustomForm(f => ({ ...f, endPos: "back" }))} className="flex-1 !py-1.5">Back</ToggleButton>
@@ -717,7 +667,7 @@ export default function Calculator({
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Ski Count</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Ski Count</label>
                   <div className="flex gap-1">
                     <ToggleButton active={customForm.skiCount === 1} onClick={() => setCustomForm(f => {
                       const updates = { ...f, skiCount: 1 };
@@ -731,7 +681,7 @@ export default function Calculator({
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Category</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Category</label>
                   <div className="flex gap-1">
                     {["spins", "steps", "lines", "flips"].map(m => {
                       const catDisabled =
@@ -752,7 +702,7 @@ export default function Calculator({
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Wake</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Wake</label>
                   {(() => {
                     const wakeForced = customForm.modifier === "flips" || customForm.modifier === "lines";
                     return (
@@ -764,7 +714,7 @@ export default function Calculator({
                   })()}
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">Toe</label>
+                  <label className="text-xs text-white font-semibold block mb-1">Toe</label>
                   <div className="flex gap-1">
                     <ToggleButton active={!customForm.isToe} disabled={customForm.skiCount === 2 || customForm.modifier === "flips"} onClick={() => setCustomForm(f => {
                       const updates = { ...f, isToe: false };
@@ -805,13 +755,13 @@ export default function Calculator({
                     setShowCustomForm(false);
                   }}
                   disabled={!customForm.abbr.trim() || !customForm.points}
-                  className="flex-1 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 disabled:bg-slate-700 disabled:text-gray-500 text-gray-100 text-sm font-medium transition-all"
+                  className="flex-1 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 disabled:bg-slate-700 disabled:text-white text-white text-sm font-semibold transition-all"
                 >
                   {editingTrickId ? "Update" : "Save"}
                 </button>
                 <button
                   onClick={() => { setShowCustomForm(false); setEditingTrickId(null); }}
-                  className="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-300 text-sm transition-all"
+                  className="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-all"
                 >
                   Cancel
                 </button>
@@ -823,22 +773,22 @@ export default function Calculator({
           {customTricks.length > 0 && (
             <div className="mt-3 sm:mt-4 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
               <div className="px-3 py-2 border-b border-slate-700">
-                <span className="text-xs sm:text-sm text-gray-400">Custom Tricks ({customTricks.length})</span>
+                <span className="text-xs sm:text-sm text-white font-semibold">Custom Tricks ({customTricks.length})</span>
               </div>
               <div className="divide-y divide-slate-700/50">
                 {customTricks.map((trick) => (
                   <div key={trick.id} className="flex items-center gap-2 px-3 py-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-100">{trick.abbr}</span>
-                        <span className="text-xs text-gray-400 truncate">{trick.description !== trick.abbr ? trick.description : ""}</span>
+                        <span className="text-sm font-bold text-white">{trick.abbr}</span>
+                        <span className="text-xs text-white font-medium truncate">{trick.description !== trick.abbr ? trick.description : ""}</span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        <span className="text-xs text-blue-400">{trick.points} pts</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-gray-400">{trick.skiCount === 1 ? "1 Ski" : "2 Skis"}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-gray-400 capitalize">{trick.modifier}</span>
-                        {trick.isWake && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-900/50 text-orange-400">Wake</span>}
-                        {trick.isToe && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-400">Toe</span>}
+                        <span className="text-xs font-bold text-blue-400">{trick.points} pts</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-white font-semibold">{trick.skiCount === 1 ? "1 Ski" : "2 Skis"}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-white font-semibold capitalize">{trick.modifier}</span>
+                        {trick.isWake && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-900/50 text-orange-400 font-semibold">Wake</span>}
+                        {trick.isToe && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-400 font-semibold">Toe</span>}
                       </div>
                     </div>
                     <button
@@ -857,13 +807,13 @@ export default function Calculator({
                         });
                         setShowCustomForm(true);
                       }}
-                      className="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-gray-300 transition-colors"
+                      className="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => onRemoveCustomTrick(trick.id)}
-                      className="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-red-900 text-gray-300 hover:text-red-300 transition-colors"
+                      className="px-2 py-1 text-xs rounded bg-slate-700 hover:bg-red-900 text-white hover:text-red-300 font-semibold transition-colors"
                     >
                       Delete
                     </button>
@@ -875,10 +825,11 @@ export default function Calculator({
 
           {/* 6-Flip Limit Warning */}
           {flipCount > 6 && (
-            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-yellow-900 border border-yellow-700 rounded-lg text-yellow-200 text-center text-sm sm:text-base">
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-yellow-900 border border-yellow-700 rounded-lg text-yellow-200 text-center text-sm sm:text-base font-bold">
               Exceeded 6 flip limit ({flipCount} flips)
             </div>
           )}
+          </>)}
 
         </div>
 

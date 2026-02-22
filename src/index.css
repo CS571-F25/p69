@@ -4,10 +4,21 @@
 
 html, body {
   overscroll-behavior: none;
+  font-family: 'Montserrat', sans-serif;
 }
 
 button, [role="button"] {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+@keyframes rev-pulse {
+  0%, 100% { background-color: var(--rev-color); }
+  50% { background-color: rgb(30, 41, 59); }
+}
+
+@keyframes chevron-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }

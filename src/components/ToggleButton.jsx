@@ -1,43 +1,42 @@
-// Reusable toggle button component with consistent styling
 export default function ToggleButton({
   active,
   disabled = false,
   onClick,
   children,
-  variant = "blue", // blue, orange, purple, yellow, green, red
+  variant = "blue",
   className = "",
   ariaLabel = "",
   style = {},
 }) {
   const variantStyles = {
     blue: {
-      active: "bg-blue-800 text-gray-100 border-blue-600 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-blue-800 text-white border-blue-600 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     orange: {
-      active: "bg-orange-700 text-gray-100 border-orange-500 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-orange-700 text-white border-orange-500 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     purple: {
-      active: "bg-purple-700 text-gray-100 border-purple-500 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-purple-700 text-white border-purple-500 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     yellow: {
-      active: "bg-yellow-700 text-gray-100 border-yellow-500 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-yellow-700 text-white border-yellow-500 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     green: {
-      active: "bg-green-800 text-gray-100 border-green-600 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-green-800 text-white border-green-600 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     red: {
-      active: "bg-red-900 text-gray-100 border-red-800 ring-2 ring-white",
-      inactive: "bg-slate-800 text-gray-300 border-slate-700 hover:bg-slate-700 hover:text-gray-200",
+      active: "bg-red-900 text-white border-red-800 ring-2 ring-white",
+      inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
   };
 
-  const baseStyles = "px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg font-light text-sm sm:text-sm tracking-wide transition-all duration-200 border whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-0";
-  const disabledStyles = "bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50";
+  const baseStyles = "px-1.5 py-3 sm:px-2 sm:py-3.5 rounded-lg font-semibold text-base sm:text-lg text-center transition-all duration-200 border focus:outline-none";
+  const disabledStyles = "bg-slate-900 text-white border-slate-800 cursor-not-allowed";
   const hasHeat = !disabled && style?.backgroundColor;
 
   const styles = variantStyles[variant] || variantStyles.blue;

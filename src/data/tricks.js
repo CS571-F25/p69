@@ -183,12 +183,9 @@ function generateReverseTricks(tricks) {
   return tricks
     .filter(t => t.canReverse !== false)
     .map(t => ({
+      ...t,
       abbr: "R" + t.abbr,
-      points: t.points,
       description: "Reverse " + t.description,
-      startPos: t.startPos,
-      endPos: t.endPos,
-      changesOrientation: t.changesOrientation,
     }));
 }
 
@@ -203,30 +200,35 @@ function hydrateCustomTrick(t) {
   };
 }
 
+// Tag each trick with its modifier/wake/toe category
+function tagTricks(tricks, modifier, isWake = false, isToe = false) {
+  return tricks.map(t => ({ ...t, modifier, isWake, isToe }));
+}
+
 // Helper to get ALL tricks for a given ski count (for AI predictions)
 export function getAllTricksForSkiCount(skiCount, customTricks = []) {
   if (skiCount === 2) {
     const baseTricks = [
-      ...twoSkiSpinTricks,
-      ...twoSkiStepTricks,
-      ...twoSkiWakeSpinTricks,
-      ...twoSkiWakeStepTricks,
-      ...twoSkiFlipTricks,
+      ...tagTricks(twoSkiSpinTricks, "spins"),
+      ...tagTricks(twoSkiStepTricks, "steps"),
+      ...tagTricks(twoSkiWakeSpinTricks, "spins", true),
+      ...tagTricks(twoSkiWakeStepTricks, "steps", true),
+      ...tagTricks(twoSkiFlipTricks, "flips"),
     ];
     const reverseTricks = generateReverseTricks(baseTricks);
     const custom = customTricks.filter(t => t.skiCount === 2).map(hydrateCustomTrick);
     return [...baseTricks, ...reverseTricks, ...custom];
   }
   const baseTricks = [
-    ...oneSkiSpinTricks,
-    ...oneSkiStepTricks,
-    ...oneSkiLineTricks,
-    ...oneSkiFlipTricks,
-    ...oneSkiWakeSpinTricks,
-    ...oneSkiWakeStepTricks,
-    ...toeSpinTricks,
-    ...toeStepTricks,
-    ...toeWakeSpinTricks,
+    ...tagTricks(oneSkiSpinTricks, "spins"),
+    ...tagTricks(oneSkiStepTricks, "steps"),
+    ...tagTricks(oneSkiLineTricks, "lines"),
+    ...tagTricks(oneSkiFlipTricks, "flips"),
+    ...tagTricks(oneSkiWakeSpinTricks, "spins", true),
+    ...tagTricks(oneSkiWakeStepTricks, "steps", true),
+    ...tagTricks(toeSpinTricks, "spins", false, true),
+    ...tagTricks(toeStepTricks, "lines", true, true),
+    ...tagTricks(toeWakeSpinTricks, "spins", true, true),
   ];
   const reverseTricks = generateReverseTricks(baseTricks);
   const custom = customTricks.filter(t => t.skiCount === 1).map(hydrateCustomTrick);

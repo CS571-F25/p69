@@ -1,5 +1,3 @@
-// Calculate heatmap color: rank 0 = warm, higher ranks = cool
-// Colors are muted by blending toward slate gray for a subtler look
 export function getHeatmapStyle(heatRank, heatTotal) {
   if (heatRank === undefined || heatTotal === 0) return {};
 
@@ -33,8 +31,10 @@ export default function TrickButton({
   description = "",
   isCustom = false,
 }) {
-  const heatStyle = !disabled && !alreadyPerformed ? getHeatmapStyle(heatRank, heatTotal) : {};
-  const hasHeat = heatRank !== undefined && heatTotal > 0 && !disabled && !alreadyPerformed;
+  // When heatmap is active, buttons with no rank get the coolest gradient color
+  const heatmapActive = heatTotal > 0 && !disabled && !alreadyPerformed;
+  const heatStyle = heatmapActive ? getHeatmapStyle(heatRank ?? heatTotal, heatTotal) : {};
+  const hasHeat = heatmapActive;
 
   const ariaLabel = `${abbr}${description ? `, ${description}` : ""}, ${alreadyPerformed ? "0" : points} points${alreadyPerformed ? ", already performed" : ""}${disabled ? ", unavailable" : ""}${isCustom ? ", custom trick" : ""}`;
 
@@ -43,29 +43,29 @@ export default function TrickButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      style={hasHeat ? heatStyle : {}}
-      className={`font-light text-base sm:text-lg tracking-wide px-3 py-3 sm:px-6 sm:py-4 rounded-lg transition-all duration-200 border relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+      style={{ ...(hasHeat ? heatStyle : {}), containerType: 'inline-size' }}
+      className={`font-semibold px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-lg transition-all duration-200 border relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
         disabled
-          ? "bg-slate-900 text-gray-500 border-slate-800 cursor-not-allowed opacity-50"
+          ? "bg-slate-900 text-white border-slate-800 cursor-not-allowed"
           : alreadyPerformed
-          ? "text-gray-300 hover:opacity-90 hover:shadow-md [background-color:rgb(134,94,152)] [border-color:rgb(114,74,132)]"
+          ? "text-white hover:opacity-90 hover:shadow-md [background-color:rgb(134,94,152)] [border-color:rgb(114,74,132)]"
           : hasHeat
           ? "text-white hover:opacity-90 hover:shadow-md"
-          : "bg-slate-800 hover:bg-blue-800 text-gray-100 border-slate-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
+          : "bg-slate-700 hover:bg-blue-800 text-white border-slate-600 hover:border-blue-700 hover:shadow-md hover:shadow-blue-900/20"
       }`}
     >
-      <div className={`${abbr.length > 4 ? "text-[10px]" : "text-sm"} sm:text-2xl font-medium`}>{abbr}</div>
-      <div className={`text-[9px] sm:text-sm whitespace-nowrap ${disabled ? "text-gray-500" : hasHeat ? "text-white/80" : "text-gray-300"}`}>
+      <div className="font-bold leading-none" style={{ fontSize: `clamp(0.6rem, ${110 / Math.max(abbr.length, 1.5)}cqw, min(1.5rem + 1vw, 2.25rem))` }}>{abbr}</div>
+      <div className="text-[10px] sm:text-xs whitespace-nowrap text-white mt-0.5">
         {alreadyPerformed ? "0" : points} pts
       </div>
       {isCustom && (
         <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
-          <span className={`text-[8px] sm:text-[10px] ${disabled ? "text-gray-600" : "text-teal-500"}`}>C</span>
+          <span className={`text-[8px] sm:text-[10px] ${disabled ? "text-white" : "text-teal-500"}`}>C</span>
         </div>
       )}
       {alreadyPerformed && (
         <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1">
-          <span className={`text-xs ${disabled ? "text-gray-500" : "text-gray-400"}`}>✓</span>
+          <span className="text-xs text-white">✓</span>
         </div>
       )}
     </button>
