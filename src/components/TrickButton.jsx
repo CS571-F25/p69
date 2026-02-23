@@ -64,8 +64,8 @@ export default function TrickButton({
         </div>
       )}
       {alreadyPerformed && (
-        <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1">
-          <span className="text-xs text-white">✓</span>
+        <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
+          <span className="text-[8px] sm:text-xs text-white">✓</span>
         </div>
       )}
     </button>

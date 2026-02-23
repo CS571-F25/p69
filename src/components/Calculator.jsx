@@ -107,67 +107,19 @@ export default function Calculator({
     const canBeReversed = trick.canReverse !== false;
 
     // Handle reverse trick availability tracking
-    if (lastReversibleTrick) {
-      if (lastReversibleTrick.changesOrientation) {
-        // Last trick changed orientation, check if this is any type of 180° turn
-        // Per IWWF Rule 9.21h: "any type of 180º turn is allowed between two such turns"
-        if (trick.is180Turn) {
-          // This is a 180° turn, so now we can reverse the previous trick
-          newState.secondLastReversibleTrick = lastReversibleTrick;
-          newState.lastReversibleTrick = canBeReversed ? trick : null;
-        } else {
-          // We did something other than a 180° turn, lose the chance to reverse the last trick
-          newState.secondLastReversibleTrick = null;
-          newState.lastReversibleTrick = canBeReversed ? trick : null;
-        }
-      } else {
-        // Last trick doesn't change orientation, it must be reversed immediately
-        // We're doing another trick, so we lose the chance
-        newState.secondLastReversibleTrick = null;
-        newState.lastReversibleTrick = canBeReversed ? trick : null;
-      }
+    // Per IWWF 9.21h: a 180° turn is allowed between a trick and its reverse
+    if (lastReversibleTrick?.changesOrientation && trick.is180Turn) {
+      newState.secondLastReversibleTrick = lastReversibleTrick;
     } else {
-      // No previous reversible trick, this becomes the first (if it can be reversed)
-      newState.lastReversibleTrick = canBeReversed ? trick : null;
       newState.secondLastReversibleTrick = null;
     }
+    newState.lastReversibleTrick = canBeReversed ? trick : null;
 
     updateState(newState);
   };
 
-  const handleReverse = (trickToReverse) => {
-    if (!trickToReverse) return;
-
-    // Save state before making changes (for undo)
-    saveStateToHistory();
-
-    const reverseAbbr = "R" + trickToReverse.abbr;
-    const reversePoints = trickToReverse.points;
-
-    // Check if this specific reverse has already been performed in ANY pass
-    const alreadyPerformed = allTricks.some(trick => trick.abbr === reverseAbbr);
-    const finalPoints = alreadyPerformed ? 0 : reversePoints;
-
-    addTrick({ abbr: reverseAbbr, points: finalPoints });
-
-    // After doing a reverse, update the reversible tricks
-    if (trickToReverse === secondLastReversibleTrick) {
-      updateState({
-        orientation: trickToReverse.endPos,
-        secondLastReversibleTrick: null,
-      });
-    } else if (trickToReverse === lastReversibleTrick) {
-      updateState({
-        orientation: trickToReverse.endPos,
-        lastReversibleTrick: null,
-        secondLastReversibleTrick: null,
-      });
-    }
-  };
-
   const handleUndo = () => {
     if (calcStateHistory.length > 0 && undoTrick()) {
-      // Restore previous state
       const previousState = calcStateHistory[calcStateHistory.length - 1];
       setCalcState(previousState);
       setCalcStateHistory(prev => prev.slice(0, -1));
@@ -176,7 +128,6 @@ export default function Calculator({
 
   const handleModifierChange = (newModifier) => {
     const updates = { modifier: newModifier };
-    // When leaving lines, undo its auto-managed wake state
     if (modifier === "lines" && newModifier !== "lines") {
       updates.isWake = false;
     }
@@ -194,24 +145,41 @@ export default function Calculator({
     updateState(updates);
   };
 
-  // Determine if each reverse button should be enabled
-  const canReverseLastTrick = lastReversibleTrick && (
-    !lastReversibleTrick.changesOrientation ||
-    lastReversibleTrick.startPos === orientation
+  // Resolve which trick (if any) can be reversed right now
+  const canReverseLast = lastReversibleTrick && (
+    !lastReversibleTrick.changesOrientation || lastReversibleTrick.startPos === orientation
   );
-  const canReverseSecondLastTrick = secondLastReversibleTrick && (
-    !secondLastReversibleTrick.changesOrientation ||
-    secondLastReversibleTrick.startPos === orientation
+  const canReverseSecondLast = secondLastReversibleTrick && (
+    !secondLastReversibleTrick.changesOrientation || secondLastReversibleTrick.startPos === orientation
   );
+  const trickToReverse = canReverseLast ? lastReversibleTrick
+    : canReverseSecondLast ? secondLastReversibleTrick : null;
+  const availableReverseAbbrs = trickToReverse ? ["R" + trickToReverse.abbr] : [];
 
-  // Build array of available reverse abbreviations for AI suggestions
-  const availableReverseAbbrs = [];
-  if (canReverseLastTrick) {
-    availableReverseAbbrs.push("R" + lastReversibleTrick.abbr);
-  }
-  if (canReverseSecondLastTrick) {
-    availableReverseAbbrs.push("R" + secondLastReversibleTrick.abbr);
-  }
+  const handleReverse = () => {
+    if (!trickToReverse) return;
+    saveStateToHistory();
+
+    const reverseAbbr = "R" + trickToReverse.abbr;
+    const alreadyPerformed = allTricks.some(trick => trick.abbr === reverseAbbr);
+    const finalPoints = alreadyPerformed ? 0 : trickToReverse.points;
+
+    addTrick({ abbr: reverseAbbr, points: finalPoints });
+
+    // Grid tricks don't carry modifier/isWake/isToe — look up the tagged version
+    const tagged = allTricksForSki.find(t => t.abbr === trickToReverse.abbr);
+    const modifierUpdate = tagged ? {
+      modifier: tagged.modifier,
+      isWake: !!tagged.isWake,
+      isToe: !!tagged.isToe,
+    } : {};
+
+    if (trickToReverse === secondLastReversibleTrick) {
+      updateState({ orientation: trickToReverse.endPos, secondLastReversibleTrick: null, ...modifierUpdate });
+    } else {
+      updateState({ orientation: trickToReverse.endPos, lastReversibleTrick: null, secondLastReversibleTrick: null, ...modifierUpdate });
+    }
+  };
 
   const passTotal = calculatePassTotal(trickList);
   const allTotal = calculatePassTotal(allTricks);
@@ -307,7 +275,7 @@ export default function Calculator({
                   <div className="w-full mb-3 sm:mb-5">
                     <div className="text-sm sm:text-base text-white font-bold mb-2">
                       Skill Level
-                      <span className="text-xs sm:text-sm text-white font-medium ml-1">
+                      <span className="text-[9px] sm:text-sm text-white font-medium ml-1">
                         : helps us suggest tricks based off passes at your level
                       </span>
                     </div>
@@ -317,7 +285,7 @@ export default function Calculator({
                           key={level.key}
                           active={skillLevel === level.key}
                           onClick={() => onSkillLevelChange(level.key)}
-                          className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                          className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
                         >
                           <div>{level.label}</div>
                           <div className="text-sm sm:text-base text-white font-medium">{level.range}</div>
@@ -334,14 +302,14 @@ export default function Calculator({
                     <ToggleButton
                       active={orientation === "front"}
                       onClick={() => updateState({ orientation: "front" })}
-                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
                     >
                       Front
                     </ToggleButton>
                     <ToggleButton
                       active={orientation === "back"}
                       onClick={() => updateState({ orientation: "back" })}
-                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
                     >
                       Back
                     </ToggleButton>
@@ -355,14 +323,14 @@ export default function Calculator({
                     <ToggleButton
                       active={skiCount === 1}
                       onClick={() => updateState({ skiCount: 1 })}
-                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
                     >
                       1 Ski
                     </ToggleButton>
                     <ToggleButton
                       active={skiCount === 2}
                       onClick={() => updateState({ skiCount: 2 })}
-                      className="!py-2 sm:!py-5 !text-xl sm:!text-2xl"
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
                     >
                       2 Skis
                     </ToggleButton>
@@ -459,6 +427,10 @@ export default function Calculator({
                   availableTricks={allTricksForSki}
                   availableReverseAbbrs={availableReverseAbbrs}
                   onTrickClick={(abbr) => {
+                    if (abbr.startsWith("R") && trickToReverse && "R" + trickToReverse.abbr === abbr) {
+                      handleReverse();
+                      return;
+                    }
                     const trick = allTricksForSki.find((t) => t.abbr === abbr);
                     if (trick && trick.startPos === orientation) {
                       handleModifierChange(trick.modifier);
@@ -555,38 +527,34 @@ export default function Calculator({
                   </ToggleButton>
 
                   {/* Reverse Button */}
-                  {(() => {
-                    const trickToReverse = canReverseLastTrick ? lastReversibleTrick : canReverseSecondLastTrick ? secondLastReversibleTrick : null;
-                    if (trickToReverse) {
-                      const heatStyle = getHeatmapStyle(heatmapData.map.get("R" + trickToReverse.abbr) ?? heatmapData.total - 1, Math.max(heatmapData.total, 1));
-                      return (
-                        <button
-                          onClick={() => handleReverse(trickToReverse)}
-                          aria-label={`Reverse ${trickToReverse.abbr}, ${trickToReverse.points} points`}
-                          style={{
-                            "--rev-color": heatStyle.backgroundColor,
-                            animation: "rev-pulse 1.5s ease-in-out infinite",
-                            borderColor: heatStyle.borderColor,
-                            containerType: "inline-size",
-                          }}
-                          className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-slate-900"
-                        >
-                          <div className="font-bold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>R{trickToReverse.abbr}</div>
-                          <div className="text-[10px] sm:text-xs font-semibold text-white mt-0.5">{trickToReverse.points} pts</div>
-                        </button>
-                      );
-                    }
+                  {trickToReverse ? (() => {
+                    const heatStyle = getHeatmapStyle(heatmapData.map.get("R" + trickToReverse.abbr) ?? heatmapData.total - 1, Math.max(heatmapData.total, 1));
                     return (
                       <button
-                        disabled
-                        aria-label="Reverse trick, unavailable"
-                        className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30"
-                        style={{ containerType: "inline-size" }}
+                        onClick={handleReverse}
+                        aria-label={`Reverse ${trickToReverse.abbr}, ${trickToReverse.points} points`}
+                        style={{
+                          "--rev-color": heatStyle.backgroundColor,
+                          animation: "rev-pulse 1.5s ease-in-out infinite",
+                          borderColor: heatStyle.borderColor,
+                          containerType: "inline-size",
+                        }}
+                        className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-slate-900"
                       >
-                        <div className="font-semibold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(3, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>REV</div>
+                        <div className="font-bold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>R{trickToReverse.abbr}</div>
+                        <div className="text-[10px] sm:text-xs font-semibold text-white mt-0.5">{trickToReverse.points} pts</div>
                       </button>
                     );
-                  })()}
+                  })() : (
+                    <button
+                      disabled
+                      aria-label="Reverse trick, unavailable"
+                      className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30"
+                      style={{ containerType: "inline-size" }}
+                    >
+                      <div className="font-semibold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(3, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>REV</div>
+                    </button>
+                  )}
                 </div>
               </div>
 
