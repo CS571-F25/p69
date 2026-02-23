@@ -268,6 +268,7 @@ export function getTricks(skiCount, modifier, isWake, isToe, customTricks = []) 
     switch (modifier) {
       case "spins": baseTricks = oneSkiWakeSpinTricks; break;
       case "steps": baseTricks = oneSkiWakeStepTricks; break;
+      case "lines": baseTricks = oneSkiLineTricks; break;
       default: baseTricks = [];
     }
   } else {

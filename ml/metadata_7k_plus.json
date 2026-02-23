@@ -1,0 +1,9 @@
+{
+  "vocab_size": 106,
+  "seq_len": 30,
+  "model_type": "GRU",
+  "embed_dim": 64,
+  "hidden_dim": 128,
+  "num_layers": 1,
+  "tier": "7k_plus"
+}

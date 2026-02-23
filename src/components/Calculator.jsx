@@ -1,13 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import TrickButton, { getHeatmapStyle } from "./TrickButton.jsx";
 import ToggleButton from "./ToggleButton.jsx";
-import StatsCard from "./StatsCard.jsx";
 import TrickListSidebar from "./TrickListSidebar.jsx";
 import TrickRecommendations from "./TrickRecommendations.jsx";
 import TutorialOverlay, { ALL_STEPS } from "./TutorialOverlay.jsx";
 import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
+import { preloadTier } from "../utils/trickPredictor.js";
 
 const SKILL_LEVELS = [
   { key: "beginner", label: "Beginner", range: "0-1k pts" },
@@ -54,6 +54,10 @@ export default function Calculator({
   const modRef = useRef(null);
   const ncRef = useRef(null);
   const revRef = useRef(null);
+
+  useEffect(() => {
+    preloadTier(skillLevel);
+  }, [skillLevel]);
 
   const isMobile = window.matchMedia?.("(pointer: coarse)").matches;
   const activeSteps = ALL_STEPS.filter(s => !s.mobileOnly || isMobile);

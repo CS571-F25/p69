@@ -48,7 +48,7 @@ export default function ToggleButton({
 
   return (
     <button
-      onClick={onClick}
+      onClick={(e) => { e.currentTarget.blur(); onClick?.(e); }}
       disabled={disabled}
       aria-pressed={active}
       aria-label={ariaLabel || undefined}

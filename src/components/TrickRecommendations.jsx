@@ -17,7 +17,7 @@ export default function TrickRecommendations({
 
   const lastTricks = trickHistory.slice(-3).map(t => t.abbr).join(",");
   const reversesKey = availableReverseAbbrs.join(",");
-  const trickHistoryKey = trickHistory.length + "-" + currentOrientation + "-" + lastTricks + "-" + reversesKey;
+  const trickHistoryKey = trickHistory.length + "-" + currentOrientation + "-" + lastTricks + "-" + reversesKey + "-" + skillLevel;
 
   useEffect(() => {
     let cancelled = false;
@@ -27,7 +27,7 @@ export default function TrickRecommendations({
       setError(null);
 
       try {
-        const rawPredictions = await predictNextTricks(trickHistory);
+        const rawPredictions = await predictNextTricks(trickHistory, skillLevel);
 
         if (cancelled) return;
 

@@ -25,3 +25,19 @@ dist-ssr
 
 CLAUDE.md
 .claude/
+
+# ML artifacts (keep source code, ignore large/generated files)
+ml/venv/
+ml/*.pt
+ml/*.txt
+ml/master_trick_data.json
+ml/sequences_*.json
+ml/formatted_sequences.json
+ml/.ipynb_checkpoints/
+
+# Environment and secrets
+*.env
+.env*
+*.pem
+*.key
+credentials*
