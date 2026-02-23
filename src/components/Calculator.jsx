@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import TrickButton, { getHeatmapStyle } from "./TrickButton.jsx";
 import ToggleButton from "./ToggleButton.jsx";
 import StatsCard from "./StatsCard.jsx";
 import TrickListSidebar from "./TrickListSidebar.jsx";
 import TrickRecommendations from "./TrickRecommendations.jsx";
+import TutorialOverlay, { ALL_STEPS } from "./TutorialOverlay.jsx";
 import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 
@@ -37,8 +38,29 @@ export default function Calculator({
   onUpdateCustomTrick,
   showSetup,
   setShowSetup,
+  tutorialEnabled,
+  setTutorialEnabled,
+  onTutorialComplete,
+  navRef,
 }) {
   const { orientation, skiCount, lastReversibleTrick, secondLastReversibleTrick, modifier, isWake, isToe, noCredit, passStarted } = calcState;
+
+  const [tutorialStep, setTutorialStep] = useState(null);
+
+  const scoreRef = useRef(null);
+  const controlsRef = useRef(null);
+  const aiRef = useRef(null);
+  const gridRef = useRef(null);
+  const modRef = useRef(null);
+  const ncRef = useRef(null);
+  const revRef = useRef(null);
+
+  const isMobile = window.matchMedia?.("(pointer: coarse)").matches;
+  const activeSteps = ALL_STEPS.filter(s => !s.mobileOnly || isMobile);
+  const tutorialRefMap = {
+    score: scoreRef, controls: controlsRef, ai: aiRef,
+    grid: gridRef, modifiers: modRef, nc: ncRef, reverse: revRef, tabs: navRef,
+  };
 
   // Heatmap state - only updated when predictions change
   const [heatmapData, setHeatmapData] = useState({ map: new Map(), total: 0 });
@@ -185,7 +207,7 @@ export default function Calculator({
   const allTotal = calculatePassTotal(allTricks);
 
   const scoreBox = (
-    <Link to="/trick-pass" className="flex-shrink-0 rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5 block">
+    <Link ref={scoreRef} to="/trick-pass" className="flex-shrink-0 rounded-lg bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 p-0.5 block">
       <div className="rounded-[calc(0.5rem-2px)] bg-slate-800 h-full min-w-[8rem] sm:min-w-[10rem] relative flex flex-col">
         <div className="pt-1.5 pl-2 sm:pt-2 sm:pl-3 text-white font-semibold text-xs sm:text-sm">Total: <span className="text-green-400 font-bold text-sm sm:text-base">{allTotal}</span></div>
         <div className="flex-1 flex items-center justify-center text-4xl sm:text-5xl font-semibold tracking-wider text-blue-400">{passTotal}</div>
@@ -246,6 +268,14 @@ export default function Calculator({
     { key: "flips", label: "Flips", disabled: false },
   ];
 
+  const endTutorial = () => { setTutorialStep(null); onTutorialComplete(); };
+  const nextTutorialStep = () => {
+    if (tutorialStep >= activeSteps.length - 1) endTutorial();
+    else setTutorialStep(tutorialStep + 1);
+  };
+  const prevTutorialStep = () => {
+    if (tutorialStep > 0) setTutorialStep(tutorialStep - 1);
+  };
   return (
     <div className="max-w-6xl mx-auto px-3 py-4 sm:px-6 sm:pt-2 sm:pb-6">
       <h1 className="sr-only">Trick Calculator</h1>
@@ -337,17 +367,37 @@ export default function Calculator({
                   </div>
                 </div>
 
+                {/* Tutorial slider */}
+                <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                  <span className="text-xs sm:text-sm text-white font-medium">Tutorial</span>
+                  <button
+                    role="switch"
+                    aria-checked={tutorialEnabled}
+                    onClick={() => setTutorialEnabled(!tutorialEnabled)}
+                    className={`relative w-8 h-[18px] sm:w-10 sm:h-[22px] rounded-full transition-colors ${
+                      tutorialEnabled ? "bg-blue-600" : "bg-slate-600"
+                    }`}
+                  >
+                    <span className={`absolute top-[3px] left-[3px] w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-white transition-transform ${
+                      tutorialEnabled ? "translate-x-[12px] sm:translate-x-[18px]" : ""
+                    }`} />
+                  </button>
+                </label>
+
                 {/* Start Button */}
                 <button
-                  onClick={() => setShowSetup(false)}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xl sm:text-2xl font-bold tracking-wider transition-all shadow-lg shadow-blue-900/30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  onClick={() => {
+                    setShowSetup(false);
+                    if (tutorialEnabled) setTutorialStep(0);
+                  }}
+                  className="w-full py-2.5 sm:py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-lg sm:text-2xl font-bold tracking-wider transition-all shadow-lg shadow-blue-900/30"
                 >
                   Start
                 </button>
               </div>
             </>
           ) : (
-            <>
+            <div className={tutorialStep !== null ? "pointer-events-none" : ""}>
               {/* Compact Status Row — score + info */}
               <div className="flex items-stretch gap-3 sm:gap-6 mb-4 sm:mb-6">
                 {scoreBox}
@@ -358,7 +408,7 @@ export default function Calculator({
                       onClick={handleUndo}
                       disabled={calcStateHistory.length === 0}
                       aria-label="Undo last trick"
-                      className={`flex-1 px-2 py-3.5 sm:py-4 ${currentPass === 2 ? "text-base" : "text-lg"} sm:text-xl font-semibold rounded-lg border whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+                      className={`flex-1 px-2 py-3.5 sm:py-4 ${currentPass === 2 ? "text-base" : "text-lg"} sm:text-xl font-semibold rounded-lg border whitespace-nowrap ${
                         calcStateHistory.length === 0
                           ? "bg-slate-900 text-white border-slate-800 cursor-not-allowed"
                           : "bg-amber-900 hover:bg-amber-700 text-white border-amber-800 hover:border-amber-600"
@@ -387,39 +437,54 @@ export default function Calculator({
                       <button
                         onClick={clearAll}
                         aria-label="Clear all tricks"
-                        className="flex-1 px-2 py-3.5 sm:py-4 text-lg sm:text-xl font-semibold rounded-lg bg-red-900 hover:bg-red-700 text-white border border-red-800 hover:border-red-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
+                        className="flex-1 px-2 py-3.5 sm:py-4 text-lg sm:text-xl font-semibold rounded-lg bg-red-900 hover:bg-red-700 text-white border border-red-800 hover:border-red-600"
                       >
                         Clear
                       </button>
                     )}
                   </div>
                   {/* Info */}
-                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-1">
+                  <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                    <button
+                      onClick={() => setTutorialStep(0)}
+                      aria-label="Show tutorial"
+                      className="hidden sm:flex w-6 h-6 rounded-full border-2 border-white text-white text-xs font-bold hover:bg-white/10 transition-colors items-center justify-center"
+                    >
+                      ?
+                    </button>
                     <div className="flex gap-x-2 sm:gap-x-3 whitespace-nowrap">
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
                     </div>
                     <div className="flex items-center gap-2 whitespace-nowrap">
+                      <button
+                        onClick={() => setTutorialStep(0)}
+                        aria-label="Show tutorial"
+                        className="sm:hidden w-5 h-5 rounded-full border-2 border-white text-white text-[10px] font-bold flex items-center justify-center"
+                      >
+                        ?
+                      </button>
                       <span className="text-xs sm:text-sm text-white font-semibold">Pass {currentPass} of 2</span>
                       {currentPass === 1 && (
-                        <ToggleButton
-                          active={true}
-                          variant="green"
-                          onClick={startSecondPass}
-                          ariaLabel="Start second pass"
-                          className="!py-1 !text-xs"
-                        >
-                          Start Pass 2
-                        </ToggleButton>
+                        <div ref={controlsRef} className="inline-flex">
+                          <ToggleButton
+                            active={true}
+                            variant="green"
+                            onClick={startSecondPass}
+                            ariaLabel="Start second pass"
+                            className="!py-1 !text-xs"
+                          >
+                            Start Pass 2
+                          </ToggleButton>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-
               {/* AI Suggestions */}
-              <div className="mb-4 sm:mb-6">
+              <div ref={aiRef} className="mb-4 sm:mb-6">
                 <TrickRecommendations
                   trickHistory={allTricks}
                   currentOrientation={orientation}
@@ -442,9 +507,8 @@ export default function Calculator({
                   skillLevel={skillLevel}
                 />
               </div>
-
               {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
-              <div className="flex gap-2.5 sm:gap-4 mb-4 sm:mb-6">
+              <div ref={modRef} className="flex gap-2.5 sm:gap-4 mb-4 sm:mb-6">
                 {/* Category Modifier Buttons (left) */}
                 <div className="flex flex-col gap-1.5 sm:gap-2 w-[4.5rem] sm:w-20 flex-shrink-0">
                   {modifiers.map((mod) => {
@@ -465,7 +529,7 @@ export default function Calculator({
                 </div>
 
                 {/* Trick Buttons Grid (center) */}
-                <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div ref={gridRef} className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4 items-start">
                   {tricks.map((trick) => {
                     const isAvailable = trick.startPos === orientation;
                     const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
@@ -481,6 +545,7 @@ export default function Calculator({
                         alreadyPerformed={alreadyPerformed}
                         heatRank={heatRank}
                         heatTotal={heatmapData.total}
+                        description={trick.description}
                         isCustom={trick.isCustom}
                       />
                     );
@@ -517,20 +582,23 @@ export default function Calculator({
                   >
                     Toe
                   </ToggleButton>
-                  <ToggleButton
-                    active={noCredit}
-                    variant="yellow"
-                    onClick={() => updateState({ noCredit: !noCredit })}
-                    className={noCredit ? "!font-bold" : ""}
-                  >
-                    NC
-                  </ToggleButton>
+                  <div ref={ncRef} className="flex flex-col">
+                    <ToggleButton
+                      active={noCredit}
+                      variant="yellow"
+                      onClick={() => updateState({ noCredit: !noCredit })}
+                      className={noCredit ? "!font-bold" : ""}
+                    >
+                      NC
+                    </ToggleButton>
+                  </div>
 
                   {/* Reverse Button */}
                   {trickToReverse ? (() => {
                     const heatStyle = getHeatmapStyle(heatmapData.map.get("R" + trickToReverse.abbr) ?? heatmapData.total - 1, Math.max(heatmapData.total, 1));
                     return (
                       <button
+                        ref={revRef}
                         onClick={handleReverse}
                         aria-label={`Reverse ${trickToReverse.abbr}, ${trickToReverse.points} points`}
                         style={{
@@ -539,7 +607,7 @@ export default function Calculator({
                           borderColor: heatStyle.borderColor,
                           containerType: "inline-size",
                         }}
-                        className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-slate-900"
+                        className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400"
                       >
                         <div className="font-bold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>R{trickToReverse.abbr}</div>
                         <div className="text-[10px] sm:text-xs font-semibold text-white mt-0.5">{trickToReverse.points} pts</div>
@@ -547,6 +615,7 @@ export default function Calculator({
                     );
                   })() : (
                     <button
+                      ref={revRef}
                       disabled
                       aria-label="Reverse trick, unavailable"
                       className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30"
@@ -557,8 +626,7 @@ export default function Calculator({
                   )}
                 </div>
               </div>
-
-            </>
+            </div>
           )}
 
           {/* Custom Trick — only shown when not in setup */}
@@ -812,6 +880,17 @@ export default function Calculator({
           />
         </div>
       </div>
+
+      {tutorialStep !== null && (
+        <TutorialOverlay
+          step={tutorialStep}
+          steps={activeSteps}
+          targetRef={tutorialRefMap[activeSteps[tutorialStep]?.key]}
+          onNext={nextTutorialStep}
+          onBack={prevTutorialStep}
+          onSkip={endTutorial}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
@@ -34,6 +34,10 @@ export default function App() {
     setSkillLevel(level);
     Preferences.set({ key: "skillLevel", value: level });
   };
+  // Tutorial
+  const [tutorialEnabled, setTutorialEnabled] = useState(false);
+  const navRef = useRef(null);
+
   // Custom tricks
   const [customTricks, setCustomTricks] = useState([]);
   const addCustomTrick = (trick) => {
@@ -52,6 +56,11 @@ export default function App() {
     Preferences.set({ key: "customTricks", value: JSON.stringify(updated) });
   };
 
+  const handleTutorialComplete = () => {
+    setTutorialEnabled(false);
+    Preferences.set({ key: "tutorialCompleted", value: "true" });
+  };
+
   // Load persisted settings
   useEffect(() => {
     Preferences.get({ key: "skillLevel" }).then(({ value }) => {
@@ -61,6 +70,9 @@ export default function App() {
       if (value) {
         try { setCustomTricks(JSON.parse(value)); } catch {}
       }
+    });
+    Preferences.get({ key: "tutorialCompleted" }).then(({ value }) => {
+      if (!value) setTutorialEnabled(true);
     });
   }, []);
   useEffect(() => {
@@ -147,7 +159,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-4 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
+      <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-4 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
         <div className="flex gap-6 sm:gap-10 items-start sm:items-center justify-center">
           <NavLink to="/" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="4" y="2" width="16" height="20" rx="2" /><rect x="7" y="5" width="10" height="4" rx="1" strokeWidth={1} /><path d="M8 12h2M14 12h2M8 16h2M14 16h2" /></svg>}>Calculator</NavLink>
           <NavLink to="/trick-pass" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h6" /></svg>}>Trick Pass</NavLink>
@@ -184,6 +196,10 @@ export default function App() {
               onUpdateCustomTrick={updateCustomTrick}
               showSetup={showSetup}
               setShowSetup={setShowSetup}
+              tutorialEnabled={tutorialEnabled}
+              setTutorialEnabled={setTutorialEnabled}
+              onTutorialComplete={handleTutorialComplete}
+              navRef={navRef}
             />
           } />
           <Route path="/trick-pass" element={

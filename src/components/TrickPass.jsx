@@ -30,9 +30,9 @@ export default function TrickPass({ passes }) {
             <button
               onClick={handleCopy}
               aria-label={copied ? "Copied to clipboard" : "Copy trick list to clipboard"}
-              className="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg border border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
+              className="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg border border-slate-600 transition-colors"
             >
-              {copied ? "Copied!" : "Copy List"}
+              {copied ? "Copied!" : "Copy Pass"}
             </button>
           </div>
         )}

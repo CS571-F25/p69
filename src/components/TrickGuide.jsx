@@ -114,7 +114,7 @@ export default function TrickGuide() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="View Full IWWF 2025 Trick Rules PDF (opens in new tab)"
-        className="inline-block mb-4 sm:mb-6 bg-blue-900 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base tracking-wide px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 border border-blue-800 hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
+        className="inline-block mb-4 sm:mb-6 bg-blue-900 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base tracking-wide px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 border border-blue-800 hover:border-blue-600"
       >
         View Full IWWF 2025 Trick Rules PDF
       </a>

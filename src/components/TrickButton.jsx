@@ -1,3 +1,5 @@
+import { useState, useRef, useCallback } from "react";
+
 export function getHeatmapStyle(heatRank, heatTotal) {
   if (heatRank === undefined || heatTotal === 0) return {};
 
@@ -31,6 +33,49 @@ export default function TrickButton({
   description = "",
   isCustom = false,
 }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const hoverTimer = useRef(null);
+  const touchTimer = useRef(null);
+  const didLongPress = useRef(false);
+
+  const clearTimers = useCallback(() => {
+    clearTimeout(hoverTimer.current);
+    clearTimeout(touchTimer.current);
+  }, []);
+
+  const onMouseEnter = useCallback(() => {
+    if (!description) return;
+    hoverTimer.current = setTimeout(() => setShowTooltip(true), 400);
+  }, [description]);
+
+  const onMouseLeave = useCallback(() => {
+    clearTimers();
+    setShowTooltip(false);
+  }, [clearTimers]);
+
+  const onTouchStart = useCallback(() => {
+    if (!description) return;
+    didLongPress.current = false;
+    touchTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      setShowTooltip(true);
+    }, 500);
+  }, [description]);
+
+  const onTouchEnd = useCallback(() => {
+    clearTimers();
+    setShowTooltip(false);
+  }, [clearTimers]);
+
+  const handleClick = useCallback((e) => {
+    if (didLongPress.current) {
+      e.preventDefault();
+      didLongPress.current = false;
+      return;
+    }
+    onClick?.(e);
+  }, [onClick]);
+
   // When heatmap is active, buttons with no rank get the coolest gradient color
   const heatmapActive = heatTotal > 0 && !disabled && !alreadyPerformed;
   const heatStyle = heatmapActive ? getHeatmapStyle(heatRank ?? heatTotal, heatTotal) : {};
@@ -40,11 +85,18 @@ export default function TrickButton({
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       aria-label={ariaLabel}
+
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchEnd}
+      onContextMenu={description ? (e) => e.preventDefault() : undefined}
       style={{ ...(hasHeat ? heatStyle : {}), containerType: 'inline-size' }}
-      className={`font-semibold px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-lg transition-all duration-200 border relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900 ${
+      className={`font-semibold px-1.5 py-2.5 sm:px-2 sm:py-3 rounded-lg transition-all duration-200 border relative ${
         disabled
           ? "bg-slate-900 text-white border-slate-800 cursor-not-allowed"
           : alreadyPerformed
@@ -66,6 +118,11 @@ export default function TrickButton({
       {alreadyPerformed && (
         <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
           <span className="text-[8px] sm:text-xs text-white">✓</span>
+        </div>
+      )}
+      {showTooltip && description && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-slate-950 text-white text-[10px] sm:text-xs rounded-lg shadow-lg whitespace-nowrap z-50 pointer-events-none border border-slate-700">
+          {description}
         </div>
       )}
     </button>

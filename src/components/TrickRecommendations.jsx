@@ -94,26 +94,32 @@ export default function TrickRecommendations({
         <span className="text-xs px-2 py-0.5 rounded-full border border-orange-500/30 text-orange-300 font-semibold capitalize">{skillLevel}</span>
       </div>
       <div className="flex gap-1.5">
-        {predictions.map((pred) => (
+        {predictions.map((pred) => {
+          const trickDef = availableTricks.find(t => t.abbr === pred.abbr);
+          const desc = trickDef?.description || "";
+          return (
           <button
             key={pred.abbr}
             onClick={() => onTrickClick && onTrickClick(pred.abbr)}
-            aria-label={`${pred.abbr}, ${pred.points} points${pred.alreadyPerformed ? ", already performed" : ""}`}
+            title={desc || undefined}
+            aria-label={`${pred.abbr}${desc ? `, ${desc}` : ""}, ${pred.alreadyPerformed ? "0" : pred.points} points${pred.alreadyPerformed ? ", already performed" : ""}`}
             style={{ containerType: 'inline-size' }}
-            className={`flex-1 flex flex-col items-center justify-center px-1 sm:px-2 py-2 sm:py-3 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-800 ${
-              pred.alreadyPerformed
-                ? "bg-slate-800/50 text-white border border-slate-700/50"
-                : "bg-orange-800/50 hover:bg-orange-700/50 text-white border border-orange-500/50 hover:border-orange-400/70"
-            }`}
+            className="relative flex-1 flex flex-col items-center justify-center px-1 sm:px-2 py-2 sm:py-3 rounded transition-colors bg-orange-800/50 hover:bg-orange-700/50 text-white border border-orange-500/50 hover:border-orange-400/70"
           >
-            <span className={`font-bold leading-none ${pred.alreadyPerformed ? "text-white line-through" : "text-blue-300"}`} style={{ fontSize: `clamp(0.6rem, ${90 / Math.max(pred.abbr.length, 1.5)}cqw, 2.25rem)` }}>
+            <span className="font-bold leading-none text-white" style={{ fontSize: `clamp(0.6rem, ${90 / Math.max(pred.abbr.length, 1.5)}cqw, 2.25rem)` }}>
               {pred.abbr}
             </span>
             <span className="text-xs sm:text-sm font-semibold leading-tight text-white mt-0.5">
-              {pred.points}
+              {pred.alreadyPerformed ? "0" : pred.points}
             </span>
+            {pred.alreadyPerformed && (
+              <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1">
+                <span className="text-[8px] sm:text-xs text-white">✓</span>
+              </div>
+            )}
           </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -11,6 +11,12 @@ button, [role="button"] {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+  outline: none;
+}
+
+button:focus, [role="button"]:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 @keyframes rev-pulse {
