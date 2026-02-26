@@ -9,6 +9,7 @@ export default function TrickPass({ passes }) {
   const pass1Total = calculatePassTotal(pass1);
   const pass2Total = calculatePassTotal(pass2);
   const grandTotal = pass1Total + pass2Total;
+  const flipCount = [...pass1, ...pass2].filter(t => t.abbr.includes("FL")).length;
 
   const handleCopy = async () => {
     const text = formatTrickList(pass1, pass2, pass1SkiCount, pass2SkiCount);
@@ -40,8 +41,17 @@ export default function TrickPass({ passes }) {
 
       {/* Grand Total Display */}
       <div className="bg-slate-800 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-slate-700">
-        <div className="text-white font-semibold text-sm mb-1">Total Points</div>
-        <div className="text-2xl sm:text-4xl font-bold tracking-wider text-blue-400">{grandTotal}</div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-white font-semibold text-sm mb-1">Total Points</div>
+            <div className="text-2xl sm:text-4xl font-bold tracking-wider text-blue-400">{grandTotal}</div>
+          </div>
+          {flipCount > 6 && (
+            <div className="text-yellow-400 text-xs sm:text-sm font-bold text-right">
+              ⚠ Exceeded 6 flip limit<br />({flipCount} flips)
+            </div>
+          )}
+        </div>
       </div>
 
       {!hasTricks ? (

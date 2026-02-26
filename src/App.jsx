@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
 import NavLink from "./components/NavLink.jsx";
@@ -34,9 +34,18 @@ export default function App() {
     setSkillLevel(level);
     Preferences.set({ key: "skillLevel", value: level });
   };
+  // Number of runs
+  const [numRuns, setNumRuns] = useState(2);
+  const handleNumRunsChange = (n) => {
+    setNumRuns(n);
+    Preferences.set({ key: "numRuns", value: String(n) });
+  };
   // Tutorial
   const [tutorialEnabled, setTutorialEnabled] = useState(false);
+  const [tutorialTrigger, setTutorialTrigger] = useState(0);
   const navRef = useRef(null);
+  const helpButtonRef = useRef(null);
+  const navigate = useNavigate();
 
   // Custom tricks
   const [customTricks, setCustomTricks] = useState([]);
@@ -65,6 +74,9 @@ export default function App() {
   useEffect(() => {
     Preferences.get({ key: "skillLevel" }).then(({ value }) => {
       if (value) setSkillLevel(value);
+    });
+    Preferences.get({ key: "numRuns" }).then(({ value }) => {
+      if (value) setNumRuns(Number(value));
     });
     Preferences.get({ key: "customTricks" }).then(({ value }) => {
       if (value) {
@@ -121,7 +133,6 @@ export default function App() {
       setCurrentPass(2);
       setCalcState(getInitialCalcState());
       setCalcStateHistory([]);
-      setShowSetup(true);
     }
   };
 
@@ -132,14 +143,12 @@ export default function App() {
     setPass1SkiCount(null);
     setCalcState(getInitialCalcState());
     setCalcStateHistory([]);
-    setShowSetup(true);
   };
 
   const clearCurrentPass = () => {
     setCurrentPassTricks([]);
     setCalcState(getInitialCalcState());
     setCalcStateHistory([]);
-    setShowSetup(true);
   };
 
   // Get all tricks from all passes for duplicate checking
@@ -165,6 +174,21 @@ export default function App() {
           <NavLink to="/trick-pass" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h6" /></svg>}>Trick Pass</NavLink>
           <NavLink to="/trick-guide" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>}>Trick Guide</NavLink>
           <NavLink to="/about" icon={<svg viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /></svg>}>About</NavLink>
+          <button
+            ref={helpButtonRef}
+            onClick={() => { navigate("/"); setShowSetup(false); setTutorialTrigger(t => t + 1); }}
+            aria-label="Show help tutorial"
+            className="flex flex-col sm:flex-row items-center sm:gap-1.5 transition-colors font-semibold text-xs sm:text-2xl tracking-wide relative pb-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-white hover:text-blue-400 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:bg-blue-400 after:transition-all after:duration-300 after:w-0 hover:after:w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            <span className="w-8 h-8 sm:w-5 sm:h-5">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="10" />
+                <path strokeLinecap="round" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+            <span className="hidden sm:inline">Help</span>
+          </button>
         </div>
         {/* Glowing blue gradient line */}
         <div className="absolute top-0 sm:top-auto sm:bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 shadow-[0_0_4px_rgba(59,130,246,0.3)]"></div>
@@ -190,6 +214,8 @@ export default function App() {
               passesForDisplay={getAllPassesForDisplay()}
               skillLevel={skillLevel}
               onSkillLevelChange={handleSkillLevelChange}
+              numRuns={numRuns}
+              onNumRunsChange={handleNumRunsChange}
               customTricks={customTricks}
               onAddCustomTrick={addCustomTrick}
               onRemoveCustomTrick={removeCustomTrick}
@@ -197,9 +223,11 @@ export default function App() {
               showSetup={showSetup}
               setShowSetup={setShowSetup}
               tutorialEnabled={tutorialEnabled}
+              tutorialTrigger={tutorialTrigger}
               setTutorialEnabled={setTutorialEnabled}
               onTutorialComplete={handleTutorialComplete}
               navRef={navRef}
+              helpButtonRef={helpButtonRef}
             />
           } />
           <Route path="/trick-pass" element={

@@ -2,16 +2,19 @@ import { useState, useLayoutEffect, useCallback } from "react";
 
 export const ALL_STEPS = [
   { key: "score", title: "Score", text: (a) => `${a} the score to view your full trick pass.`, arrow: "up" },
+  { key: "settings", title: "Settings", text: (a) => `${a} here to change your starting position, skis, number of passes, and skill level.`, arrow: "up" },
   { key: "controls", title: "Controls", text: (a) => `${a} here to begin your second pass if you have one.`, arrow: "up" },
-  { key: "ai", title: "AI Suggestions", text: (a) => `${a} a trick to add it. These are suggestions based on similar passes at your selected skill level.`, arrow: "up" },
-  { key: "grid", title: "Trick Grid", text: (a) => `${a} to add your tricks. Grayed out tricks mean you can't do them from your position. The checkmark means that trick has already been done and won't give you additional points. ${a === "Tap" ? "Long press" : "Hover"} over a trick abbreviation for its full name.`, arrow: "down" },
-  { key: "modifiers", title: "Modifiers", text: (a) => `${a} the tabs on the left and right side to goall to different trick categories.`, arrow: "down" },
+  { key: "ai", title: "AI Suggestions", text: (a) => `Check here first when inputting your pass! Our AI predicts your next trick based on real passes at your skill level. ${a} any suggestion to instantly add it to your pass.`, arrow: "up" },
+  { key: "grid", title: "Trick Grid", text: (a) => `${a} the grid to add your tricks! Hotter colors on the heatmap mean a higher likelihood of that being your next trick. Grayed out = ineligible position, checkmark = already done (0 pts). Hover over an abbreviation for its full name.`, arrow: "down" },
+  { key: "modifiers", title: "Modifiers", text: (a) => `${a} the tabs on the left and right to switch between trick categories.`, arrow: "down" },
   { key: "nc", title: "No Credit", text: (a) => `${a} here to enter any trick and score it as 0 points.`, arrow: "up" },
   { key: "reverse", title: "Reverse", text: () => `This will activate when you are eligible to reverse a trick.`, arrow: "up" },
   { key: "tabs", title: "Tabs", text: () => `You can navigate to the Trick Pass, Trick Guide, and About section here.`, arrow: "down", mobileOnly: true },
+  { key: "help", title: "Need Help?", text: (a) => `${a} here anytime to replay this tutorial!`, arrow: (isMobile) => isMobile ? "down" : "up" },
 ];
 
-const action = window.matchMedia?.("(pointer: coarse)").matches ? "Tap" : "Click";
+const isMobile = window.matchMedia?.("(pointer: coarse)").matches;
+const action = isMobile ? "Tap" : "Click";
 
 export default function TutorialOverlay({ step, steps, targetRef, onNext, onBack, onSkip }) {
   const current = steps[step];
@@ -23,7 +26,7 @@ export default function TutorialOverlay({ step, steps, targetRef, onNext, onBack
     if (!targetRef?.current) return;
     const rect = targetRef.current.getBoundingClientRect();
     const pad = 10;
-    const arrow = current.arrow;
+    const arrow = typeof current.arrow === "function" ? current.arrow(isMobile) : current.arrow;
 
     const base = { position: "fixed", opacity: 1, zIndex: 60 };
 

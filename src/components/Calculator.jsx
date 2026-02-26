@@ -9,13 +9,6 @@ import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 import { preloadTier } from "../utils/trickPredictor.js";
 
-const SKILL_LEVELS = [
-  { key: "beginner", label: "Beginner", range: "0-1k pts" },
-  { key: "intermediate", label: "Intermediate", range: "1k-2k pts" },
-  { key: "advanced", label: "Advanced", range: "2k-7k pts" },
-  { key: "pro", label: "Pro", range: "7k+ pts" },
-];
-
 export default function Calculator({
   addTrick,
   undoTrick,
@@ -42,28 +35,47 @@ export default function Calculator({
   setTutorialEnabled,
   onTutorialComplete,
   navRef,
+  numRuns = 2,
+  onNumRunsChange,
+  tutorialTrigger = 0,
+  helpButtonRef,
 }) {
+  const SKILL_LEVELS = [
+    { key: "beginner",     label: "Beginner",     range: numRuns === 1 ? "0-500 pts"   : "0-1k pts"   },
+    { key: "intermediate", label: "Intermediate", range: numRuns === 1 ? "500-1k pts"  : "1k-2k pts"  },
+    { key: "advanced",     label: "Advanced",     range: numRuns === 1 ? "1k-3.5k pts" : "2k-7k pts"  },
+    { key: "pro",          label: "Pro",          range: numRuns === 1 ? "3.5k+ pts"   : "7k+ pts"    },
+  ];
   const { orientation, skiCount, lastReversibleTrick, secondLastReversibleTrick, modifier, isWake, isToe, noCredit, passStarted } = calcState;
 
   const [tutorialStep, setTutorialStep] = useState(null);
 
   const scoreRef = useRef(null);
   const controlsRef = useRef(null);
+  const passCounterRef = useRef(null);
+  const settingsRef = useRef(null);
   const aiRef = useRef(null);
   const gridRef = useRef(null);
   const modRef = useRef(null);
   const ncRef = useRef(null);
   const revRef = useRef(null);
 
+  // Fallback ref: points to "Start Pass 2" when visible, else the "Pass X of Y" counter
+  const controlsFallbackRef = { get current() { return controlsRef.current || passCounterRef.current; } };
+
   useEffect(() => {
     preloadTier(skillLevel);
   }, [skillLevel]);
 
+  useEffect(() => {
+    if (tutorialTrigger > 0) setTutorialStep(0);
+  }, [tutorialTrigger]);
+
   const isMobile = window.matchMedia?.("(pointer: coarse)").matches;
   const activeSteps = ALL_STEPS.filter(s => !s.mobileOnly || isMobile);
   const tutorialRefMap = {
-    score: scoreRef, controls: controlsRef, ai: aiRef,
-    grid: gridRef, modifiers: modRef, nc: ncRef, reverse: revRef, tabs: navRef,
+    score: scoreRef, controls: controlsFallbackRef, settings: settingsRef, ai: aiRef,
+    grid: gridRef, modifiers: modRef, nc: ncRef, reverse: revRef, tabs: navRef, help: helpButtonRef,
   };
 
   // Heatmap state - only updated when predictions change
@@ -224,9 +236,6 @@ export default function Calculator({
     </Link>
   );
 
-  // Count flips for 6-flip limit warning
-  const flipCount = trickList.filter(t => t.abbr.includes("FL")).length;
-
   // Check if lines/flips should be disabled
   const linesDisabled = skiCount === 2;
   const toeDisabled = skiCount === 2;
@@ -297,13 +306,66 @@ export default function Calculator({
                     <button disabled className="px-5 py-2.5 sm:px-6 sm:py-3 text-base sm:text-lg font-semibold rounded-lg border bg-slate-900 text-white border-slate-800 cursor-not-allowed">Clear</button>
                   </div>
                   <div className="text-base sm:text-lg text-white font-bold">
-                    Pass {currentPass} of 2
+                    Pass {currentPass} of {numRuns}
                   </div>
                 </div>
               </div>
 
               {/* Setup View */}
               <div className="flex flex-col py-1 sm:py-3">
+                {/* Starting Position */}
+                <div className="w-full mb-3 sm:mb-5">
+                  <div className="text-sm sm:text-base text-white font-bold mb-2">Starting Position</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleButton
+                      active={orientation === "front"}
+                      onClick={() => updateState({ orientation: "front" })}
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                    >
+                      Front
+                    </ToggleButton>
+                    <ToggleButton
+                      active={orientation === "back"}
+                      onClick={() => updateState({ orientation: "back" })}
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                    >
+                      Back
+                    </ToggleButton>
+                  </div>
+                </div>
+
+                {/* Skis */}
+                <div className="w-full mb-3 sm:mb-5">
+                  <div className="text-sm sm:text-base text-white font-bold mb-2">Skis</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleButton
+                      active={skiCount === 1}
+                      onClick={() => updateState({ skiCount: 1 })}
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                    >
+                      1 Ski
+                    </ToggleButton>
+                    <ToggleButton
+                      active={skiCount === 2}
+                      onClick={() => updateState({ skiCount: 2 })}
+                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                    >
+                      2 Skis
+                    </ToggleButton>
+                  </div>
+                </div>
+
+                {/* Number of Runs — pass 1 only */}
+                {currentPass === 1 && (
+                  <div className="w-full mb-3 sm:mb-5">
+                    <div className="text-sm sm:text-base text-white font-bold mb-2">Number of Runs</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ToggleButton active={numRuns === 1} onClick={() => onNumRunsChange(1)} className="!py-2 sm:!py-3 !text-xl sm:!text-xl">1 Run</ToggleButton>
+                      <ToggleButton active={numRuns === 2} onClick={() => onNumRunsChange(2)} className="!py-2 sm:!py-3 !text-xl sm:!text-xl">2 Runs</ToggleButton>
+                    </div>
+                  </div>
+                )}
+
                 {/* Skill Level — pass 1 only */}
                 {currentPass === 1 && (
                   <div className="w-full mb-3 sm:mb-5">
@@ -328,48 +390,6 @@ export default function Calculator({
                     </div>
                   </div>
                 )}
-
-                {/* Starting Position */}
-                <div className="w-full mb-3 sm:mb-5">
-                  <div className="text-sm sm:text-base text-white font-bold mb-2">Starting Position</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <ToggleButton
-                      active={orientation === "front"}
-                      onClick={() => updateState({ orientation: "front" })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
-                    >
-                      Front
-                    </ToggleButton>
-                    <ToggleButton
-                      active={orientation === "back"}
-                      onClick={() => updateState({ orientation: "back" })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
-                    >
-                      Back
-                    </ToggleButton>
-                  </div>
-                </div>
-
-                {/* Skis */}
-                <div className="w-full mb-3 sm:mb-6">
-                  <div className="text-sm sm:text-base text-white font-bold mb-2">Skis</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <ToggleButton
-                      active={skiCount === 1}
-                      onClick={() => updateState({ skiCount: 1 })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
-                    >
-                      1 Ski
-                    </ToggleButton>
-                    <ToggleButton
-                      active={skiCount === 2}
-                      onClick={() => updateState({ skiCount: 2 })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
-                    >
-                      2 Skis
-                    </ToggleButton>
-                  </div>
-                </div>
 
                 {/* Tutorial slider */}
                 <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
@@ -406,7 +426,7 @@ export default function Calculator({
               <div className="flex items-stretch gap-3 sm:gap-6 mb-4 sm:mb-6">
                 {scoreBox}
                 <div className="flex-1 min-w-0 flex flex-col items-end justify-between">
-                  {/* Undo + Clear */}
+                  {/* Undo + Clear + Settings */}
                   <div className="flex gap-2 w-full mb-2">
                     <button
                       onClick={handleUndo}
@@ -448,29 +468,26 @@ export default function Calculator({
                     )}
                   </div>
                   {/* Info */}
-                  <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
-                    <button
-                      onClick={() => setTutorialStep(0)}
-                      aria-label="Show tutorial"
-                      className="hidden sm:flex w-6 h-6 rounded-full border-2 border-white text-white text-xs font-bold hover:bg-white/10 transition-colors items-center justify-center"
-                    >
-                      ?
-                    </button>
-                    <div className="flex gap-x-2 sm:gap-x-3 whitespace-nowrap">
+                  <div className="flex items-center justify-between w-full gap-x-2">
+                    <div className="flex items-center gap-x-2 sm:gap-x-3">
+                      <button
+                        ref={settingsRef}
+                        onClick={() => setShowSetup(true)}
+                        aria-label="Open settings"
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
                       <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
                     </div>
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <button
-                        onClick={() => setTutorialStep(0)}
-                        aria-label="Show tutorial"
-                        className="sm:hidden w-5 h-5 rounded-full border-2 border-white text-white text-[10px] font-bold flex items-center justify-center"
-                      >
-                        ?
-                      </button>
-                      <span className="text-xs sm:text-sm text-white font-semibold">Pass {currentPass} of 2</span>
-                      {currentPass === 1 && (
+                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold">Pass {currentPass} of {numRuns}</span>
+                      {numRuns === 2 && currentPass === 1 && (
                         <div ref={controlsRef} className="inline-flex">
                           <ToggleButton
                             active={true}
@@ -613,8 +630,8 @@ export default function Calculator({
                         }}
                         className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400"
                       >
-                        <div className="font-bold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>R{trickToReverse.abbr}</div>
-                        <div className="text-[10px] sm:text-xs font-semibold text-white mt-0.5">{trickToReverse.points} pts</div>
+                        <div className="font-bold leading-none" style={{ fontSize: `clamp(0.75rem, ${130 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, 2rem)` }}>R{trickToReverse.abbr}</div>
+                        <div className="text-[9px] font-semibold text-white/80 mt-0.5">{trickToReverse.points} pts</div>
                       </button>
                     );
                   })() : (
@@ -863,12 +880,6 @@ export default function Calculator({
             </div>
           )}
 
-          {/* 6-Flip Limit Warning */}
-          {flipCount > 6 && (
-            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-yellow-900 border border-yellow-700 rounded-lg text-yellow-200 text-center text-sm sm:text-base font-bold">
-              Exceeded 6 flip limit ({flipCount} flips)
-            </div>
-          )}
           </>)}
 
         </div>
