@@ -312,22 +312,22 @@ export default function Calculator({
               </div>
 
               {/* Setup View */}
-              <div className="flex flex-col py-1 sm:py-3">
+              <div className="flex flex-col py-1">
                 {/* Starting Position */}
-                <div className="w-full mb-3 sm:mb-5">
-                  <div className="text-sm sm:text-base text-white font-bold mb-2">Starting Position</div>
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="w-full mb-2 sm:mb-4">
+                  <div className="text-xs sm:text-base text-white font-bold mb-1.5">Starting Position</div>
+                  <div className="grid grid-cols-2 gap-2">
                     <ToggleButton
                       active={orientation === "front"}
                       onClick={() => updateState({ orientation: "front" })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                      className="!py-1.5 sm:!py-3 !text-base sm:!text-xl"
                     >
                       Front
                     </ToggleButton>
                     <ToggleButton
                       active={orientation === "back"}
                       onClick={() => updateState({ orientation: "back" })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                      className="!py-1.5 sm:!py-3 !text-base sm:!text-xl"
                     >
                       Back
                     </ToggleButton>
@@ -335,20 +335,20 @@ export default function Calculator({
                 </div>
 
                 {/* Skis */}
-                <div className="w-full mb-3 sm:mb-5">
-                  <div className="text-sm sm:text-base text-white font-bold mb-2">Skis</div>
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="w-full mb-2 sm:mb-4">
+                  <div className="text-xs sm:text-base text-white font-bold mb-1.5">Skis</div>
+                  <div className="grid grid-cols-2 gap-2">
                     <ToggleButton
                       active={skiCount === 1}
                       onClick={() => updateState({ skiCount: 1 })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                      className="!py-1.5 sm:!py-3 !text-base sm:!text-xl"
                     >
                       1 Ski
                     </ToggleButton>
                     <ToggleButton
                       active={skiCount === 2}
                       onClick={() => updateState({ skiCount: 2 })}
-                      className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                      className="!py-1.5 sm:!py-3 !text-base sm:!text-xl"
                     >
                       2 Skis
                     </ToggleButton>
@@ -357,19 +357,19 @@ export default function Calculator({
 
                 {/* Number of Runs — pass 1 only */}
                 {currentPass === 1 && (
-                  <div className="w-full mb-3 sm:mb-5">
-                    <div className="text-sm sm:text-base text-white font-bold mb-2">Number of Runs</div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <ToggleButton active={numRuns === 1} onClick={() => onNumRunsChange(1)} className="!py-2 sm:!py-3 !text-xl sm:!text-xl">1 Run</ToggleButton>
-                      <ToggleButton active={numRuns === 2} onClick={() => onNumRunsChange(2)} className="!py-2 sm:!py-3 !text-xl sm:!text-xl">2 Runs</ToggleButton>
+                  <div className="w-full mb-2 sm:mb-4">
+                    <div className="text-xs sm:text-base text-white font-bold mb-1.5">Number of Runs</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <ToggleButton active={numRuns === 1} onClick={() => onNumRunsChange(1)} className="!py-1.5 sm:!py-3 !text-base sm:!text-xl">1 Run</ToggleButton>
+                      <ToggleButton active={numRuns === 2} onClick={() => onNumRunsChange(2)} className="!py-1.5 sm:!py-3 !text-base sm:!text-xl">2 Runs</ToggleButton>
                     </div>
                   </div>
                 )}
 
                 {/* Skill Level — pass 1 only */}
                 {currentPass === 1 && (
-                  <div className="w-full mb-3 sm:mb-5">
-                    <div className="text-sm sm:text-base text-white font-bold mb-2">
+                  <div className="w-full mb-2 sm:mb-4">
+                    <div className="text-xs sm:text-base text-white font-bold mb-1.5">
                       Skill Level
                       <span className="text-[9px] sm:text-sm text-white font-medium ml-1">
                         : helps us suggest tricks based off passes at your level
@@ -381,10 +381,10 @@ export default function Calculator({
                           key={level.key}
                           active={skillLevel === level.key}
                           onClick={() => onSkillLevelChange(level.key)}
-                          className="!py-2 sm:!py-3 !text-xl sm:!text-xl"
+                          className="!py-1.5 sm:!py-3 !text-base sm:!text-xl"
                         >
                           <div>{level.label}</div>
-                          <div className="text-sm sm:text-base text-white font-medium">{level.range}</div>
+                          <div className="text-xs sm:text-base text-white font-medium">{level.range}</div>
                         </ToggleButton>
                       ))}
                     </div>
@@ -392,7 +392,7 @@ export default function Calculator({
                 )}
 
                 {/* Tutorial slider */}
-                <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                <label className="flex items-center gap-2 mb-2 cursor-pointer select-none">
                   <span className="text-xs sm:text-sm text-white font-medium">Tutorial</span>
                   <button
                     role="switch"
@@ -414,7 +414,7 @@ export default function Calculator({
                     setShowSetup(false);
                     if (tutorialEnabled) setTutorialStep(0);
                   }}
-                  className="w-full py-2.5 sm:py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-lg sm:text-2xl font-bold tracking-wider transition-all shadow-lg shadow-blue-900/30"
+                  className="w-full py-2 sm:py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-base sm:text-2xl font-bold tracking-wider transition-all shadow-lg shadow-blue-900/30"
                 >
                   Start
                 </button>
