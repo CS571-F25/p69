@@ -468,39 +468,41 @@ export default function Calculator({
                     )}
                   </div>
                   {/* Info */}
-                  <div className="flex items-center justify-between w-full gap-x-2">
-                    <div className="flex items-center gap-x-2 sm:gap-x-3">
-                      <button
-                        ref={settingsRef}
-                        onClick={() => setShowSetup(true)}
-                        aria-label="Open settings"
-                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
-                      >
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </button>
-                      <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
-                      <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
-                      <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
+                  <div className="flex flex-col gap-1 w-full">
+                    {/* Settings + stats row */}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-x-2 sm:gap-x-3">
+                        <button
+                          ref={settingsRef}
+                          onClick={() => setShowSetup(true)}
+                          aria-label="Open settings"
+                          className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
+                        >
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                        <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
+                        <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
+                        <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
+                      </div>
+                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap">Pass {currentPass} of {numRuns}</span>
                     </div>
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold">Pass {currentPass} of {numRuns}</span>
-                      {numRuns === 2 && currentPass === 1 && (
-                        <div ref={controlsRef} className="inline-flex">
-                          <ToggleButton
-                            active={true}
-                            variant="green"
-                            onClick={startSecondPass}
-                            ariaLabel="Start second pass"
-                            className="!py-1 !text-xs"
-                          >
-                            Start Pass 2
-                          </ToggleButton>
-                        </div>
-                      )}
-                    </div>
+                    {/* Start Pass 2 — full width row below on mobile */}
+                    {numRuns === 2 && currentPass === 1 && (
+                      <div ref={controlsRef} className="w-full sm:flex sm:justify-end">
+                        <ToggleButton
+                          active={true}
+                          variant="green"
+                          onClick={startSecondPass}
+                          ariaLabel="Start second pass"
+                          className="!py-1.5 !text-xs w-full sm:w-auto"
+                        >
+                          Start Pass 2
+                        </ToggleButton>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

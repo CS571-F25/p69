@@ -26,7 +26,7 @@ export default function ToggleButton({
       inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     green: {
-      active: "bg-green-800 text-white border-green-600 ring-2 ring-white",
+      active: "bg-green-900 text-white border-green-800 ring-2 ring-white",
       inactive: "bg-slate-800 text-white border-slate-700 hover:bg-slate-700",
     },
     red: {
