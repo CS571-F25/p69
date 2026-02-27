@@ -507,7 +507,7 @@ export default function Calculator({
                         </div>
                       </div>
                     ) : (
-                      <div ref={controlsRef} className="flex w-full items-center justify-center gap-2">
+                      <div ref={controlsRef} className="flex w-full items-center gap-2">
                         <button
                           ref={settingsRef}
                           onClick={() => setShowSetup(true)}
