@@ -48,11 +48,13 @@ export default function TutorialOverlay({ step, steps, targetRef, onNext, onBack
       const alignRight = targetCenterX / window.innerWidth > 0.6;
 
       if (alignRight) {
-        base.right = Math.max(8, window.innerWidth - targetCenterX - 20);
-        arrowStyles = [{ right: 14 }];
+        const clampedRight = Math.max(8, window.innerWidth - targetCenterX - 20);
+        base.right = clampedRight;
+        arrowStyles = [{ right: Math.max(6, Math.min(window.innerWidth - targetCenterX - clampedRight - 6, 244)) }];
       } else {
-        base.left = Math.max(8, Math.min(targetCenterX - 20, window.innerWidth - 268));
-        arrowStyles = [{ left: 14 }];
+        const clampedLeft = Math.max(8, Math.min(targetCenterX - 20, window.innerWidth - 268));
+        base.left = clampedLeft;
+        arrowStyles = [{ left: Math.max(6, Math.min(targetCenterX - clampedLeft - 6, 244)) }];
       }
     }
 
