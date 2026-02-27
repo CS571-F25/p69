@@ -174,7 +174,7 @@ export default function App() {
           <NavLink to="/" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="4" y="2" width="16" height="20" rx="2" /><rect x="7" y="5" width="10" height="4" rx="1" strokeWidth={1} /><path d="M8 12h2M14 12h2M8 16h2M14 16h2" /></svg>}>Calculator</NavLink>
           <NavLink to="/trick-pass" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h6" /></svg>}>Trick Pass</NavLink>
           <NavLink to="/trick-guide" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>}>Trick Guide</NavLink>
-          <NavLink to="/about" icon={<svg viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /></svg>}>About</NavLink>
+          <NavLink to="/about" icon={<svg viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 17v-5" /><circle cx="12" cy="7.5" r="1.5" fill="currentColor" stroke="none" /></svg>}>About</NavLink>
           <button
             ref={helpButtonRef}
             onClick={() => { navigate("/"); setShowSetup(false); setTutorialTrigger(t => t + 1); }}

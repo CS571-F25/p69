@@ -494,7 +494,7 @@ export default function Calculator({
                         <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
                         <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
                       </div>
-                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap">Pass {currentPass} of {numRuns}</span>
+                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap sm:block hidden">Pass {currentPass} of {numRuns}</span>
                     </div>
                     {/* Settings + Start Pass 2 row */}
                     {numRuns === 2 && currentPass === 1 && (
