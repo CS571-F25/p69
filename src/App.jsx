@@ -43,6 +43,7 @@ export default function App() {
   // Tutorial
   const [tutorialEnabled, setTutorialEnabled] = useState(false);
   const [tutorialTrigger, setTutorialTrigger] = useState(0);
+  const resetTutorialTrigger = () => setTutorialTrigger(0);
   const navRef = useRef(null);
   const helpButtonRef = useRef(null);
   const navigate = useNavigate();
@@ -168,7 +169,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Navigation */}
-      <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-4 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
+      <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 sm:relative px-3 pt-3 sm:p-6 bg-slate-950 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:pb-6 sm:pt-[calc(env(safe-area-inset-top)+1.5rem)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" aria-label="Main navigation">
         <div className="flex gap-6 sm:gap-10 items-start sm:items-center justify-center">
           <NavLink to="/" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="4" y="2" width="16" height="20" rx="2" /><rect x="7" y="5" width="10" height="4" rx="1" strokeWidth={1} /><path d="M8 12h2M14 12h2M8 16h2M14 16h2" /></svg>}>Calculator</NavLink>
           <NavLink to="/trick-pass" icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h6" /></svg>}>Trick Pass</NavLink>
@@ -184,7 +185,7 @@ export default function App() {
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <circle cx="12" cy="12" r="10" />
                 <path strokeLinecap="round" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none" />
               </svg>
             </span>
             <span className="hidden sm:inline">Help</span>
@@ -195,7 +196,7 @@ export default function App() {
       </nav>
 
       {/* Page Content */}
-      <div className="p-2 sm:p-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-28 sm:pb-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <div className="p-2 sm:p-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-20 sm:pb-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <Routes>
           <Route path="/" element={
             <Calculator
@@ -226,6 +227,7 @@ export default function App() {
               tutorialTrigger={tutorialTrigger}
               setTutorialEnabled={setTutorialEnabled}
               onTutorialComplete={handleTutorialComplete}
+              onTutorialTriggered={resetTutorialTrigger}
               navRef={navRef}
               helpButtonRef={helpButtonRef}
             />
