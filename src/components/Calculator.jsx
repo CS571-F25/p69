@@ -309,9 +309,6 @@ export default function Calculator({
                     <button disabled className="px-5 py-2.5 sm:px-6 sm:py-3 text-base sm:text-lg font-semibold rounded-lg border bg-slate-900 text-white border-slate-800 cursor-not-allowed">Undo</button>
                     <button disabled className="px-5 py-2.5 sm:px-6 sm:py-3 text-base sm:text-lg font-semibold rounded-lg border bg-slate-900 text-white border-slate-800 cursor-not-allowed">Clear</button>
                   </div>
-                  <div className="text-base sm:text-lg text-white font-bold">
-                    Pass {currentPass} of {numRuns}
-                  </div>
                 </div>
               </div>
 
