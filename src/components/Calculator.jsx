@@ -473,54 +473,49 @@ export default function Calculator({
                   </div>
                   {/* Info */}
                   <div className="flex flex-col gap-1 w-full">
-                    {/* Stats row */}
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-x-2 sm:gap-x-3">
-                        {/* Settings button — only here when Start Pass 2 is not visible */}
-                        {!(numRuns === 2 && currentPass === 1) && (
-                          <button
-                            ref={settingsRef}
-                            onClick={() => setShowSetup(true)}
-                            aria-label="Open settings"
-                            className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
-                          >
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                          </button>
-                        )}
-                        <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
-                        <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
-                        <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
-                      </div>
-                      <span ref={passCounterRef} className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap sm:block hidden">Pass {currentPass} of {numRuns}</span>
-                    </div>
-                    {/* Settings + Start Pass 2 row */}
+                    {/* Stats row — only shown alongside Start Pass 2 */}
                     {numRuns === 2 && currentPass === 1 && (
-                      <div ref={controlsRef} className="flex gap-2 w-full">
-                        <button
-                          ref={settingsRef}
-                          onClick={() => setShowSetup(true)}
-                          aria-label="Open settings"
-                          className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
-                        >
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </button>
-                        <ToggleButton
-                          active={true}
-                          variant="green"
-                          onClick={startSecondPass}
-                          ariaLabel="Start second pass"
-                          className="!py-1.5 !text-xs flex-1"
-                        >
-                          Start Pass 2
-                        </ToggleButton>
+                      <div ref={passCounterRef} className="flex items-center justify-center w-full">
+                        <div className="flex items-center gap-x-2 sm:gap-x-3">
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
+                        </div>
                       </div>
                     )}
+                    {/* Controls row — always visible */}
+                    <div className="flex gap-2 w-full items-center">
+                      <button
+                        ref={settingsRef}
+                        onClick={() => setShowSetup(true)}
+                        aria-label="Open settings"
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                      {numRuns === 2 && currentPass === 1 ? (
+                        <div ref={controlsRef} className="flex-1">
+                          <ToggleButton
+                            active={true}
+                            variant="green"
+                            onClick={startSecondPass}
+                            ariaLabel="Start second pass"
+                            className="!py-1.5 !text-xs w-full"
+                          >
+                            Start Pass 2
+                          </ToggleButton>
+                        </div>
+                      ) : (
+                        <div ref={controlsRef} className="flex-1 flex items-center justify-center gap-x-2 sm:gap-x-3">
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Pos: </span><span className="hidden sm:inline">Position: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{orientation}</span></span>
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold">Skis: </span><span className="text-xs sm:text-base font-bold text-blue-400">{skiCount}</span></span>
+                          <span><span className="text-[10px] sm:text-sm text-white font-semibold"><span className="sm:hidden">Lvl: </span><span className="hidden sm:inline">Level: </span></span><span className="text-xs sm:text-base font-bold text-blue-400 capitalize">{skillLevel}</span></span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

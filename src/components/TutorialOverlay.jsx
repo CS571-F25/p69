@@ -48,10 +48,10 @@ export default function TutorialOverlay({ step, steps, targetRef, onNext, onBack
       const alignRight = targetCenterX / window.innerWidth > 0.6;
 
       if (alignRight) {
-        base.right = window.innerWidth - targetCenterX - 20;
+        base.right = Math.max(8, window.innerWidth - targetCenterX - 20);
         arrowStyles = [{ right: 14 }];
       } else {
-        base.left = Math.max(8, rect.left);
+        base.left = Math.max(8, Math.min(targetCenterX - 20, window.innerWidth - 268));
         arrowStyles = [{ left: 14 }];
       }
     }
