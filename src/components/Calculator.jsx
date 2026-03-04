@@ -655,7 +655,7 @@ export default function Calculator({
                         }}
                         className="text-white hover:shadow-md px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400"
                       >
-                        <div className="font-bold leading-none" style={{ fontSize: `clamp(0.75rem, ${130 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, 2rem)` }}>R{trickToReverse.abbr}</div>
+                        <div className="font-bold leading-none" style={{ fontSize: `clamp(0.75rem, ${130 / Math.max(("R" + trickToReverse.abbr).length, 1.5)}cqw, min(2rem, 6vw))` }}>R{trickToReverse.abbr}</div>
                         <div className="text-[9px] font-semibold text-white/80 mt-0.5">{trickToReverse.points} pts</div>
                       </button>
                     );
@@ -664,10 +664,10 @@ export default function Calculator({
                       ref={revRef}
                       disabled
                       aria-label="Reverse trick, unavailable"
-                      className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30"
+                      className="bg-slate-900/80 text-white cursor-not-allowed px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 border-blue-400/30 flex items-center justify-center"
                       style={{ containerType: "inline-size" }}
                     >
-                      <div className="font-semibold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(3, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem))` }}>REV</div>
+                      <div className="font-semibold leading-none" style={{ fontSize: `clamp(0.5rem, ${110 / Math.max(3, 1.5)}cqw, min(1.25rem + 1vw, 1.75rem, 5.5vw))` }}>REV</div>
                     </button>
                   )}
                 </div>
