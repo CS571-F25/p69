@@ -699,7 +699,14 @@ export default function Calculator({
           </button>
 
           {showCustomForm && (
-            <div className="mt-2 p-3 sm:p-4 bg-slate-800 rounded-lg border border-slate-700">
+            <div
+              className="mt-2 p-3 sm:p-4 bg-slate-800 rounded-lg border border-slate-700"
+              onTouchStart={(e) => {
+                if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                  document.activeElement?.blur();
+                }
+              }}
+            >
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="text-xs text-white font-semibold block mb-1">Name</label>
@@ -708,7 +715,9 @@ export default function Calculator({
                     value={customForm.description}
                     onChange={(e) => setCustomForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="Front Flip 540 Back Landing"
+                    enterKeyHint="next"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
                 <div>
@@ -718,7 +727,9 @@ export default function Calculator({
                     value={customForm.abbr}
                     onChange={(e) => setCustomForm(f => ({ ...f, abbr: e.target.value.toUpperCase() }))}
                     placeholder="e.g. FFL5LB"
+                    enterKeyHint="next"
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
                 <div>
@@ -729,7 +740,10 @@ export default function Calculator({
                     onChange={(e) => setCustomForm(f => ({ ...f, points: e.target.value }))}
                     placeholder="0"
                     min="0"
+                    enterKeyHint="done"
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
 
