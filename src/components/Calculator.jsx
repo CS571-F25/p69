@@ -715,7 +715,8 @@ export default function Calculator({
                     value={customForm.description}
                     onChange={(e) => setCustomForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="Front Flip 540 Back Landing"
-                    enterKeyHint="next"
+                    enterKeyHint="done"
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                     style={{ fontSize: '16px' }}
                   />
@@ -727,7 +728,8 @@ export default function Calculator({
                     value={customForm.abbr}
                     onChange={(e) => setCustomForm(f => ({ ...f, abbr: e.target.value.toUpperCase() }))}
                     placeholder="e.g. FFL5LB"
-                    enterKeyHint="next"
+                    enterKeyHint="done"
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                     style={{ fontSize: '16px' }}
                   />
@@ -735,11 +737,11 @@ export default function Calculator({
                 <div>
                   <label className="text-xs text-white font-semibold block mb-1">Points</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={customForm.points}
                     onChange={(e) => setCustomForm(f => ({ ...f, points: e.target.value }))}
                     placeholder="0"
-                    min="0"
                     enterKeyHint="done"
                     onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-blue-500"
