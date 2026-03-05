@@ -36,6 +36,22 @@ export default function About() {
             Jake Artang & Calvin DeBellis
           </p>
         </Section>
+
+        <Section title="Privacy Policy">
+          <p className="text-base text-white font-medium leading-relaxed mb-3">
+            TrickSki Calculator is designed to respect your privacy. We do not collect, store,
+            or transmit any personal information. All app data stays on your device.
+          </p>
+          <p className="text-base text-white font-medium leading-relaxed mb-3">
+            Your preferences (such as skill level and custom tricks) are stored locally on your
+            device and are never sent to any server. The trick prediction model runs entirely
+            on-device, so no data leaves your phone or browser.
+          </p>
+          <p className="text-base text-white font-medium leading-relaxed">
+            This app does not use any third-party analytics, advertising, or tracking services.
+          </p>
+          <p className="text-sm text-slate-400 mt-3">Last updated: March 5, 2026</p>
+        </Section>
       </div>
     </div>
   );
