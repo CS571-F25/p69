@@ -8,6 +8,7 @@ import TutorialOverlay, { ALL_STEPS } from "./TutorialOverlay.jsx";
 import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
 import { calculatePassTotal } from "../utils/trickUtils.js";
 import { preloadTier } from "../utils/trickPredictor.js";
+import { useVoiceInput } from "../hooks/useVoiceInput.js";
 
 export default function Calculator({
   addTrick,
@@ -293,6 +294,25 @@ export default function Calculator({
   const prevTutorialStep = () => {
     if (tutorialStep > 0) setTutorialStep(tutorialStep - 1);
   };
+
+  const {
+    voiceState,
+    liveTranscript,
+    errorMessage: voiceError,
+    lastApplied: voiceLastApplied,
+    platform: voicePlatform,
+    toggleListening,
+  } = useVoiceInput({
+    tricks: allTricksForSki,
+    calcState,
+    onTrickRecognized: (trick) => {
+      handleModifierChange(trick.modifier);
+      updateState({ isWake: !!trick.isWake, isToe: !!trick.isToe });
+      handleTrickClick(trick);
+    },
+    onReverse: handleReverse,
+  });
+
   return (
     <div className="max-w-6xl mx-auto px-3 py-4 sm:px-6 sm:pt-2 sm:pb-6">
       <h1 className="sr-only">Trick Calculator</h1>
@@ -553,6 +573,24 @@ export default function Calculator({
                   skillLevel={skillLevel}
                 />
               </div>
+
+              {/* Voice auto-add feedback */}
+              {voiceLastApplied && (
+                <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-green-600 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-sm truncate">{voiceLastApplied.displayText}</div>
+                    <div className="text-xs text-white/60 mt-0.5">Added by voice</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Voice error banner */}
+              {voiceError && (
+                <div className="mb-4 px-3 py-2 bg-red-950/60 border border-red-800 rounded-lg text-red-300 text-xs font-medium">
+                  {voiceError}
+                </div>
+              )}
+
               {/* Main Layout: Modifiers on left, Tricks in center, Wake on right */}
               <div className="flex gap-2.5 sm:gap-4 mb-4 sm:mb-6">
                 {/* Category Modifier Buttons (left) */}
@@ -628,6 +666,37 @@ export default function Calculator({
                   >
                     Toe
                   </ToggleButton>
+                  {/* Microphone Button */}
+                  {voicePlatform !== "unsupported" && (
+                    <button
+                      onClick={toggleListening}
+                      aria-label={voiceState === "listening" ? "Stop listening" : "Read off tricks by voice"}
+                      className={`px-1.5 py-2.5 sm:px-4 sm:py-3 rounded-lg border-2 font-semibold transition-all text-white flex flex-col items-center justify-center gap-0.5 ${
+                        voiceState === "listening"
+                          ? "border-red-500 bg-red-900/50 animate-[rev-pulse_1s_ease-in-out_infinite]"
+                          : voiceState === "error"
+                          ? "border-red-700 bg-red-950/30"
+                          : "border-blue-500/50 bg-slate-800 hover:border-blue-400 hover:bg-slate-700"
+                      }`}
+                    >
+                      {voiceState === "listening" ? (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <rect x="6" y="6" width="12" height="12" rx="1" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <rect x="9" y="3" width="6" height="11" rx="3" />
+                          <path strokeLinecap="round" d="M5 11a7 7 0 0014 0M12 18v3M8 21h8" />
+                        </svg>
+                      )}
+                      {voiceState === "listening" && liveTranscript && (
+                        <span className="text-[7px] leading-tight text-white/70 truncate w-full text-center max-w-[4rem]">
+                          {liveTranscript}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
                   <div ref={ncRef} className="flex flex-col">
                     <ToggleButton
                       active={noCredit}

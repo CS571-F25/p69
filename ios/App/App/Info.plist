@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TrickSki uses your microphone to add tricks by voice.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>TrickSki uses on-device speech recognition to convert spoken trick names into calculator entries.</string>
 </dict>
 </plist>
