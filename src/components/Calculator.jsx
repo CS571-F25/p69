@@ -6,7 +6,7 @@ import TrickListSidebar from "./TrickListSidebar.jsx";
 import TrickRecommendations from "./TrickRecommendations.jsx";
 import TutorialOverlay, { ALL_STEPS } from "./TutorialOverlay.jsx";
 import { getTricks, getAllTricksForSkiCount } from "../data/tricks.js";
-import { calculatePassTotal } from "../utils/trickUtils.js";
+import { calculatePassTotal, canStartTrick, resolveEndPos } from "../utils/trickUtils.js";
 import { preloadTier } from "../utils/trickPredictor.js";
 
 export default function Calculator({
@@ -116,7 +116,7 @@ export default function Calculator({
   const allTricksForSki = getAllTricksForSkiCount(skiCount, customTricks);
 
   const handleTrickClick = (trick) => {
-    const { abbr, points, endPos } = trick;
+    const { abbr, points } = trick;
 
     // Save state before making changes (for undo)
     saveStateToHistory();
@@ -143,7 +143,7 @@ export default function Calculator({
     addTrick({ abbr: displayAbbr, points: finalPoints });
 
     // Reset no credit modifier after use
-    const newState = { orientation: endPos, noCredit: false };
+    const newState = { orientation: resolveEndPos(trick, orientation), noCredit: false };
 
     // Check if this trick can be reversed (default true if not specified)
     const canBeReversed = trick.canReverse !== false;
@@ -217,9 +217,9 @@ export default function Calculator({
     } : {};
 
     if (trickToReverse === secondLastReversibleTrick) {
-      updateState({ orientation: trickToReverse.endPos, secondLastReversibleTrick: null, ...modifierUpdate });
+      updateState({ orientation: resolveEndPos(trickToReverse, orientation), secondLastReversibleTrick: null, ...modifierUpdate });
     } else {
-      updateState({ orientation: trickToReverse.endPos, lastReversibleTrick: null, secondLastReversibleTrick: null, ...modifierUpdate });
+      updateState({ orientation: resolveEndPos(trickToReverse, orientation), lastReversibleTrick: null, secondLastReversibleTrick: null, ...modifierUpdate });
     }
   };
 
@@ -543,7 +543,7 @@ export default function Calculator({
                       return;
                     }
                     const trick = allTricksForSki.find((t) => t.abbr === abbr);
-                    if (trick && trick.startPos === orientation) {
+                    if (trick && canStartTrick(trick, orientation)) {
                       handleModifierChange(trick.modifier);
                       updateState({ isWake: !!trick.isWake, isToe: !!trick.isToe });
                       handleTrickClick(trick);
@@ -577,7 +577,7 @@ export default function Calculator({
                 {/* Trick Buttons Grid (center) */}
                 <div ref={gridRef} className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4 items-start">
                   {tricks.map((trick) => {
-                    const isAvailable = trick.startPos === orientation;
+                    const isAvailable = canStartTrick(trick, orientation);
                     const alreadyPerformed = allTricks.some(t => t.abbr === trick.abbr);
                     const heatRank = heatmapData.map.get(trick.abbr);
                     const displayPoints = noCredit ? 0 : trick.points;

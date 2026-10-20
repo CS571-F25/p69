@@ -1,0 +1,12 @@
+name = "trickskicalc-donations"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Edit these and run `npx wrangler deploy` to change the goal or hide the
+# donate button in the native apps without an app-store release.
+[vars]
+GOAL_USD = "140"
+SHOW_DONATE_NATIVE = "true"
+
+# Secret (set once): npx wrangler secret put STRIPE_KEY
+# Use a Stripe *restricted* key with Charges: Read only.

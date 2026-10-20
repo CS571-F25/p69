@@ -1,4 +1,5 @@
 import * as ort from "onnxruntime-web/wasm";
+import { canStartTrick } from "./trickUtils.js";
 
 const SEQ_LEN = 30;
 
@@ -217,7 +218,7 @@ export function filterLegalPredictions(
       }
 
       // Non-reverse tricks: filter by orientation
-      return trickDef.startPos === currentOrientation;
+      return canStartTrick(trickDef, currentOrientation);
     })
     .map((pred, index) => {
       const trickDef = availableMap.get(pred.abbr);

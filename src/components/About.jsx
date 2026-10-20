@@ -1,4 +1,5 @@
 import Section from "./Section.jsx";
+import DonationMeter from "./DonationMeter.jsx";
 
 export default function About() {
   return (
@@ -6,51 +7,45 @@ export default function About() {
       <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-white">About</h1>
 
       <div className="space-y-4 sm:space-y-6">
-        <Section title="What is Trick Water Skiing?">
-          <p className="text-base text-white font-medium leading-relaxed">
-            Trick water skiing is a competitive discipline where skiers perform a series of spins, flips, and other
-            acrobatic maneuvers while being towed behind a boat. Athletes have two 20-second passes to complete as
-            many tricks as possible, with each trick assigned a point value based on difficulty. The same trick
-            cannot be scored twice across both passes, making strategic planning essential.
-          </p>
-        </Section>
-
-        <Section title="About This App">
-          <p className="text-base text-white font-medium leading-relaxed mb-3">
-            This trick calculator helps water ski athletes and coaches plan and track trick runs. Based on the
-            official IWWF 2025 rules, it provides:
-          </p>
-          <ul className="text-base text-white font-medium space-y-1.5 ml-4 list-disc">
-            <li>Real-time point calculation as you build your pass</li>
-            <li>Automatic tracking of which tricks have been used</li>
-            <li>Support for all modifiers including wake, toe, and stepover variations</li>
-            <li>Two-pass system with duplicate detection</li>
-            <li>Shareable text formatting for your trick runs</li>
-            <li>Smart predictions for the most likely next trick</li>
-            <li>Quick reference guide to all trick values</li>
-          </ul>
-        </Section>
-
         <Section title="Developed By">
-          <p className="text-base text-white font-medium">
-            Jake Artang & Calvin DeBellis
+          <p className="text-base text-white font-medium mb-3">
+            Jake Artang &amp; Calvin DeBellis
           </p>
+          <p className="text-base text-white font-medium leading-relaxed">
+            <span className="font-bold">Jake Artang:</span> Hey! I'm a 3-event waterskier from U of Wisconsin-Madison.
+            In addition to TrickSkiCalc, I'm also contracting with USA Water Ski for their livescoring and officials
+            management systems. I'm currently graduating with a degree in computer science this spring and looking for
+            places to ski in Florida and/or roommates to ski bum with. HMU at{" "}
+            <a href="mailto:jake.artang@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
+              jake.artang@gmail.com
+            </a>{" "}
+            if you know of any opportunities. If you like the app and want to support future developments or help me
+            out, consider donating using the link below.
+          </p>
+        </Section>
+
+        <Section title="Help me buy a new trick handle!">
+          <DonationMeter />
         </Section>
 
         <Section title="Privacy Policy">
           <p className="text-base text-white font-medium leading-relaxed mb-3">
             TrickSki Calculator is designed to respect your privacy. We do not collect, store,
-            or transmit any personal information. All app data stays on your device.
+            or transmit any personal information.
           </p>
           <p className="text-base text-white font-medium leading-relaxed mb-3">
             Your preferences (such as skill level and custom tricks) are stored locally on your
             device and are never sent to any server. The trick prediction model runs entirely
-            on-device, so no data leaves your phone or browser.
+            on-device, so your trick data never leaves your phone or browser.
+          </p>
+          <p className="text-base text-white font-medium leading-relaxed mb-3">
+            The About page fetches an anonymous running total for the donation meter from our server.
+            Donations are processed by Stripe on Stripe's website; this app never sees or stores payment details.
           </p>
           <p className="text-base text-white font-medium leading-relaxed">
             This app does not use any third-party analytics, advertising, or tracking services.
           </p>
-          <p className="text-sm text-slate-400 mt-3">Last updated: March 5, 2026</p>
+          <p className="text-sm text-slate-400 mt-3">Last updated: October 19, 2026</p>
         </Section>
       </div>
     </div>

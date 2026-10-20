@@ -6,7 +6,7 @@
 // ============================================
 
 export const twoSkiSpinTricks = [
-  { abbr: "S", points: 20, description: "Side Slide", startPos: "front", endPos: "front", changesOrientation: false },
+  { abbr: "S", points: 20, description: "Side Slide", startPos: "any", endPos: "same", changesOrientation: false },
   { abbr: "B", points: 30, description: "180 F-B", startPos: "front", endPos: "back", changesOrientation: true, is180Turn: true },
   { abbr: "F", points: 30, description: "B-F", startPos: "back", endPos: "front", changesOrientation: true, is180Turn: true },
   { abbr: "O", points: 40, description: "360 F-F", startPos: "front", endPos: "front", changesOrientation: false },
@@ -68,7 +68,7 @@ export const twoSkiFlipTricks = [
 // ============================================
 
 export const oneSkiSpinTricks = [
-  { abbr: "S", points: 40, description: "Side Slide", startPos: "front", endPos: "front", changesOrientation: false },
+  { abbr: "S", points: 40, description: "Side Slide", startPos: "any", endPos: "same", changesOrientation: false },
   { abbr: "B", points: 60, description: "180 F-B", startPos: "front", endPos: "back", changesOrientation: true, is180Turn: true },
   { abbr: "F", points: 60, description: "B-F", startPos: "back", endPos: "front", changesOrientation: true, is180Turn: true },
   { abbr: "O", points: 90, description: "360 F-F", startPos: "front", endPos: "front", changesOrientation: false },
@@ -147,7 +147,7 @@ export const oneSkiWakeStepTricks = [
 
 // Toe tricks - 1 ski only
 export const toeSpinTricks = [
-  { abbr: "TS", points: 130, description: "Toehold Side Slide", startPos: "front", endPos: "front", changesOrientation: false },
+  { abbr: "TS", points: 130, description: "Toehold Side Slide", startPos: "any", endPos: "same", changesOrientation: false },
   { abbr: "TB", points: 100, description: "Toe 180 F-B", startPos: "front", endPos: "back", changesOrientation: true, is180Turn: true },
   { abbr: "TF", points: 100, description: "Toe B-F", startPos: "back", endPos: "front", changesOrientation: true, is180Turn: true },
   { abbr: "TO", points: 200, description: "Toe 360 F-F", startPos: "front", endPos: "front", changesOrientation: false },

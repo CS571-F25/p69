@@ -2,6 +2,14 @@
 
 import { Capacitor } from "@capacitor/core";
 
+// Position helpers. A trick with startPos "any" (e.g. side slide) can be
+// started from either position, and endPos "same" keeps the current one.
+export const canStartTrick = (trick, orientation) =>
+  trick.startPos === "any" || trick.startPos === orientation;
+
+export const resolveEndPos = (trick, orientation) =>
+  trick.endPos === "same" ? orientation : trick.endPos;
+
 export async function copyToClipboard(text) {
   try {
     if (Capacitor.isNativePlatform()) {
