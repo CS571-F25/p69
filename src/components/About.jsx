@@ -13,7 +13,7 @@ export default function About() {
           </p>
         </Section>
 
-        <Section title="About Jake">
+        <Section title="About Jake (tango)">
           <p className="text-base text-white font-medium leading-relaxed">
             Hey! I'm a 3-event waterskier from U of Wisconsin-Madison. In addition to TrickSkiCalc, I'm also
             contracting with USA Water Ski for their livescoring and officials management systems. I'm currently
@@ -27,7 +27,7 @@ export default function About() {
           </p>
         </Section>
 
-        <Section title="Help me buy a new trick handle!" centered>
+        <Section title="Help me buy a toe handle!" centered>
           <DonationMeter />
         </Section>
 
