@@ -2,6 +2,11 @@ name = "trickskicalc-donations"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
+# Web bundles for native live updates (see scripts/make-bundle.py). Only the
+# newest zips are kept; they are uploaded on every `wrangler deploy`.
+[assets]
+directory = "./bundles"
+
 # Edit these and run `npx wrangler deploy` to change the goal or hide the
 # donate button in the native apps without an app-store release.
 [vars]

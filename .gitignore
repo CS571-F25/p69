@@ -44,3 +44,4 @@ credentials*
 # Cloudflare Worker local state
 .wrangler/
 worker/node_modules/
+worker/bundles/*.zip

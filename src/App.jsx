@@ -95,6 +95,12 @@ export default function App() {
         StatusBar.setBackgroundColor({ color: "#0f172a" }).catch(() => {});
       }).catch(() => {});
 
+      // Tells the live-update plugin this bundle booted; without it the plugin
+      // rolls back to the previous bundle after appReadyTimeout.
+      import("@capgo/capacitor-updater").then(({ CapacitorUpdater }) => {
+        CapacitorUpdater.notifyAppReady().catch(() => {});
+      }).catch(() => {});
+
       import("@capacitor/app").then(({ App: CapApp }) => {
         CapApp.addListener("backButton", ({ canGoBack }) => {
           if (canGoBack) window.history.back();

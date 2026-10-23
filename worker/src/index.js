@@ -1,11 +1,15 @@
-// Serves { raised, goal, showDonateNative, updatedAt } for the TrickSkiCalc
-// donation meter by summing succeeded Stripe charges. Read-only; no webhooks.
+// TrickSkiCalc backend on Cloudflare Workers:
+//   GET  /          donation meter { raised, goal, showDonateNative, updatedAt }
+//                   from succeeded Stripe charges (read-only, no webhooks)
+//   POST /updates   live-update check for the native apps (see updates.js)
+//   GET  /*.zip     web bundles, served from the static assets in bundles/
+import { handleUpdateCheck } from "./updates.js";
 
 const CACHE_SECONDS = 60;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -47,12 +51,17 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
-    if (request.method !== "GET") {
-      return json({ error: "Method not allowed" }, 405);
+    const url = new URL(request.url);
+    if (url.pathname === "/updates") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return json(await handleUpdateCheck(request, url.origin));
+    }
+    if (request.method !== "GET" || url.pathname !== "/") {
+      return json({ error: "Not found" }, 404);
     }
 
     const cache = caches.default;
-    const cacheKey = new Request(new URL(request.url).origin + "/", { method: "GET" });
+    const cacheKey = new Request(url.origin + "/", { method: "GET" });
     const cached = await cache.match(cacheKey);
     if (cached) return cached;
 

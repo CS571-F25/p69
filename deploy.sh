@@ -30,6 +30,21 @@ log "Building web app..."
 npm run build
 log "Build complete."
 
+# Step 1b: Package the build as a live-update bundle and publish the Worker.
+# Native apps poll the Worker and download this bundle, so web changes reach
+# iOS/Android without a store release. --builtin marks the bundle as the one
+# embedded in the next native build so those installs skip a redundant download.
+BUNDLE_VERSION="1.1.$(git rev-list --count HEAD)"
+BUILTIN_FLAG=""
+if should_run "android" || should_run "ios"; then
+  BUILTIN_FLAG="--builtin"
+fi
+log "Packaging live-update bundle ${BUNDLE_VERSION}..."
+python worker/scripts/make-bundle.py "$BUNDLE_VERSION" $BUILTIN_FLAG
+log "Publishing Worker (donation API + bundle)..."
+(cd worker && npx wrangler deploy)
+log "Worker published."
+
 # Step 2: Capacitor sync
 if should_run "android" || should_run "ios"; then
   log "Syncing Capacitor..."

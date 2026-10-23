@@ -8,6 +8,13 @@
   "plugins": {
     "Keyboard": {
       "resize": "body"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": "atBackground",
+      "updateUrl": "https://trickskicalc-donations.jake-artang.workers.dev/updates",
+      "statsUrl": "",
+      "resetWhenUpdate": true,
+      "appReadyTimeout": 15000
     }
   }
 }
