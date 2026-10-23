@@ -28,3 +28,17 @@ button:focus, [role="button"]:focus {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
+/* Donation meter water surface */
+@keyframes wave-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.wave {
+  animation: wave-drift 4s linear infinite;
+}
+
+.wave-back {
+  animation-duration: 7s;
+  animation-direction: reverse;
+}

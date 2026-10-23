@@ -5,6 +5,13 @@ export default function useDonationStats() {
   const [stats, setStats] = useState({ raised: 0, goal: DEFAULT_GOAL, showDonateNative: true, loading: true, error: false });
 
   useEffect(() => {
+    // ?demo=<amount> previews the meter at a given total without touching Stripe.
+    const demo = new URLSearchParams(window.location.search).get("demo");
+    if (demo !== null) {
+      setStats({ raised: Math.max(0, Number(demo) || 0), goal: DEFAULT_GOAL, showDonateNative: true, loading: false, error: false });
+      return;
+    }
+
     let cancelled = false;
     fetch(DONATION_STATS_URL, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
