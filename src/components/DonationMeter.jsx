@@ -46,13 +46,13 @@ export default function DonationMeter() {
         <img
           src={handleImg}
           alt="Masterline EVA trick handle"
-          className="w-44 h-44 sm:w-72 sm:h-72 object-cover rounded-lg bg-white"
+          className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-lg bg-white"
         />
 
         <div className="flex flex-col items-center">
-          <span className="text-xs text-slate-400 mb-1">{formatUsd(goal)}</span>
+          <span className="text-white font-bold text-lg mb-1">{formatUsd(goal)}</span>
           <div
-            className="relative w-40 sm:w-56 h-72 sm:h-80 rounded-full bg-slate-700 border-4 border-slate-600 overflow-hidden"
+            className="relative w-52 sm:w-56 h-72 sm:h-80 rounded-full bg-slate-700 border-4 border-slate-600 overflow-hidden"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={goal}
@@ -70,17 +70,19 @@ export default function DonationMeter() {
                 </>
               )}
             </div>
-            <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              {loading || error ? "" : `${pct}%`}
+            <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-3xl drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {loading ? "…" : error ? "" : reached ? "Goal!" : formatUsd(raised)}
             </span>
           </div>
-          <span className="text-xs text-slate-400 mt-1">$0</span>
+          <span className="text-white font-bold text-lg mt-1">$0</span>
         </div>
       </div>
 
-      <p className="text-white font-semibold text-lg text-center">
-        {loading ? "Loading…" : error ? "Total unavailable right now" : reached ? "Goal reached, thank you!" : `${formatUsd(raised)} raised of ${formatUsd(goal)}`}
-      </p>
+      {(error || reached) && (
+        <p className="text-white font-semibold text-lg text-center">
+          {error ? "Total unavailable right now" : "Goal reached, thank you!"}
+        </p>
+      )}
 
       {showButton && (
         <a
