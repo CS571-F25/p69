@@ -46,7 +46,7 @@ export default function DonationMeter() {
         <img
           src={handleImg}
           alt="Masterline EVA trick handle"
-          className="w-44 h-44 sm:w-72 sm:h-72 object-cover rounded-lg bg-white"
+          className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-lg bg-white"
         />
 
         <div className="flex flex-col items-center">
