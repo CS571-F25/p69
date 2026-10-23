@@ -41,12 +41,17 @@ export default function DonationMeter() {
   };
 
   return (
-    <div className="flex gap-5 sm:gap-8 items-stretch">
-      {/* Vertical meter */}
-      <div className="flex flex-col items-center flex-shrink-0">
+    <div className="flex flex-col items-center gap-4">
+      <img
+        src={handleImg}
+        alt="Masterline EVA trick handle"
+        className="w-44 h-44 sm:w-52 sm:h-52 object-cover rounded-lg bg-white"
+      />
+
+      <div className="flex flex-col items-center">
         <span className="text-xs text-slate-400 mb-1">{formatUsd(goal)}</span>
         <div
-          className="relative w-20 sm:w-24 h-64 sm:h-72 rounded-full bg-slate-700 border-4 border-slate-600 overflow-hidden"
+          className="relative w-32 sm:w-40 h-72 sm:h-80 rounded-full bg-slate-700 border-4 border-slate-600 overflow-hidden"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={goal}
@@ -64,35 +69,28 @@ export default function DonationMeter() {
               </>
             )}
           </div>
-          <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {loading || error ? "" : `${pct}%`}
           </span>
         </div>
         <span className="text-xs text-slate-400 mt-1">$0</span>
       </div>
 
-      {/* Image, status, and donate button */}
-      <div className="flex-1 flex flex-col items-start justify-center gap-4 min-w-0">
-        <img
-          src={handleImg}
-          alt="Masterline EVA trick handle"
-          className="w-36 h-36 sm:w-44 sm:h-44 object-cover rounded-lg bg-white"
-        />
-        <p className="text-white font-semibold text-lg">
-          {loading ? "Loadingâ€¦" : error ? "Total unavailable right now" : reached ? "Goal reached, thank you!" : `${formatUsd(raised)} raised of ${formatUsd(goal)}`}
-        </p>
-        {showButton && (
-          <a
-            href={STRIPE_DONATE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleDonate}
-            className="inline-block px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-          >
-            Donate
-          </a>
-        )}
-      </div>
+      <p className="text-white font-semibold text-lg text-center">
+        {loading ? "Loading…" : error ? "Total unavailable right now" : reached ? "Goal reached, thank you!" : `${formatUsd(raised)} raised of ${formatUsd(goal)}`}
+      </p>
+
+      {showButton && (
+        <a
+          href={STRIPE_DONATE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleDonate}
+          className="inline-block px-8 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        >
+          Donate
+        </a>
+      )}
     </div>
   );
 }

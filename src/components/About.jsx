@@ -8,14 +8,17 @@ export default function About() {
 
       <div className="space-y-4 sm:space-y-6">
         <Section title="Developed By">
-          <p className="text-base text-white font-medium mb-3">
+          <p className="text-base text-white font-medium">
             Jake Artang &amp; Calvin DeBellis
           </p>
+        </Section>
+
+        <Section title="About Jake">
           <p className="text-base text-white font-medium leading-relaxed">
-            <span className="font-bold">Jake Artang:</span> Hey! I'm a 3-event waterskier from U of Wisconsin-Madison.
-            In addition to TrickSkiCalc, I'm also contracting with USA Water Ski for their livescoring and officials
-            management systems. I'm currently graduating with a degree in computer science this spring and looking for
-            places to ski in Florida and/or roommates to ski bum with. HMU at{" "}
+            Hey! I'm a 3-event waterskier from U of Wisconsin-Madison. In addition to TrickSkiCalc, I'm also
+            contracting with USA Water Ski for their livescoring and officials management systems. I'm currently
+            graduating with a degree in computer science this spring and looking for places to ski in Florida
+            and/or roommates to ski bum with. HMU at{" "}
             <a href="mailto:jake.artang@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
               jake.artang@gmail.com
             </a>{" "}
@@ -24,7 +27,7 @@ export default function About() {
           </p>
         </Section>
 
-        <Section title="Help me buy a new trick handle!">
+        <Section title="Help me buy a new trick handle!" centered>
           <DonationMeter />
         </Section>
 
