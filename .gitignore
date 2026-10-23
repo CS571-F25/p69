@@ -41,3 +41,6 @@ ml/.ipynb_checkpoints/
 *.pem
 *.key
 credentials*
+# Cloudflare Worker local state
+.wrangler/
+worker/node_modules/
